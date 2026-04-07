@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Denali | Organics Reporting Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>if(!window.jspdf){document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/scr'+'ipt>')}</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --dn-dark:#30455C;--dn-light:#68BCD4;--dn-deep:#1E2D3D;--dn-navy:#263848;--dn-mid:#4A6A82;
+  --dn-sky:#8ED0E2;--dn-ice:#B5E1ED;--dn-sand:#C8B88A;--dn-warm:#D4A35A;--dn-bark:#8B7355;
+  --bg:#F3F5F7;--card:#fff;--border:rgba(48,69,92,0.07);--text:#1E2D3D;--text2:#5A6B7A;--text3:#8A97A4;
+  --green:#2E8B57;--red:#C0392B;--amber:#D4880F;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--dn-deep);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(30,45,61,.3)}
+.hdr-main{display:flex;align-items:center;justify-content:space-between;padding:12px 32px}
+.hdr-left{display:flex;align-items:center;gap:18px}
+.logo{display:flex;align-items:center;gap:8px}
+.logo svg{width:26px;height:26px}
+.logo-text{font-size:20px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dn-light)}
+.hdr-sep{width:1px;height:24px;background:rgba(255,255,255,.1)}
+.hdr-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.up-status{font-size:11px;color:rgba(255,255,255,.3);transition:color .3s}
+.up-status.on{color:var(--dn-light)}
+.up-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--dn-dark);border:1px solid rgba(104,188,212,.2);border-radius:6px;color:var(--dn-light);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.up-btn:hover{border-color:var(--dn-light);box-shadow:0 4px 12px rgba(104,188,212,.15);transform:translateY(-1px)}
+.up-btn svg{width:14px;height:14px}
+#fileInput{display:none}
+
+/* MASTER PROGRAM TABS */
+.prog-bar{background:var(--dn-dark);padding:0 32px;display:flex;align-items:center;gap:0;border-top:1px solid rgba(255,255,255,.06)}
+.prog-tab{padding:10px 24px;border:none;background:0;color:rgba(255,255,255,.4);font-family:inherit;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap}
+.prog-tab.active{color:#fff;border-bottom-color:var(--dn-light);background:rgba(104,188,212,.08)}
+.prog-tab:hover:not(.active){color:rgba(255,255,255,.65)}
+.prog-section{display:none}
+.prog-section.active{display:block}
+
+/* NAV TABS */
+.nav{background:var(--dn-navy);padding:0 32px;display:flex;align-items:center;gap:0;border-top:1px solid rgba(255,255,255,.03);overflow-x:auto}
+.nav-tab{padding:10px 20px;border:none;background:0;color:rgba(255,255,255,.35);font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-bottom:2px solid transparent;white-space:nowrap}
+.nav-tab.active{color:var(--dn-light);border-bottom-color:var(--dn-light)}
+.nav-tab:hover:not(.active){color:rgba(255,255,255,.6)}
+
+/* FILTERS */
+.fbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:5px}
+.fl{font-size:9px;text-transform:uppercase;letter-spacing:1.6px;color:var(--text3);font-weight:700}
+.fbar select{padding:5px 26px 5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%238A97A4' d='M2.5 4l2.5 2.5L7.5 4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.fbar select:focus{outline:none;border-color:var(--dn-light);box-shadow:0 0 0 2px rgba(104,188,212,.12)}
+.fsep{width:1px;height:18px;background:var(--border)}
+.ptabs{display:flex;gap:1px;background:var(--bg);border-radius:5px;padding:2px;border:1px solid var(--border)}
+.ptab{padding:4px 12px;border:none;border-radius:3px;background:0;color:var(--text3);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.ptab.active{background:var(--dn-dark);color:#fff}
+.ptab:hover:not(.active){color:var(--text2)}
+
+/* MAIN */
+.main{padding:24px 32px 60px;max-width:1520px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;padding:80px 40px;text-align:center}
+.empty-ic{width:64px;height:64px;border-radius:14px;background:#fff;border:2px dashed rgba(48,69,92,.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.empty-ic svg{width:26px;height:26px;color:var(--dn-dark)}
+.empty h2{font-family:'Libre Baskerville',serif;font-size:20px;margin-bottom:6px}
+.empty p{font-size:13px;color:var(--text2);max-width:400px;line-height:1.5}
+
+/* GRID */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g6{grid-template-columns:repeat(6,1fr)}
+.g23{grid-template-columns:2fr 1fr}
+.g32{grid-template-columns:1fr 2fr}
+.span2{grid-column:span 2}
+.span3{grid-column:span 3}
+.full{grid-column:1/-1}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:0 1px 3px rgba(30,45,61,.03);transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 16px rgba(30,45,61,.06)}
+.card-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:12px}
+
+/* KPI */
+.kpi{position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--dn-dark),var(--dn-light))}
+.kpi-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kpi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-icon svg{width:16px;height:16px}
+.kpi-v{font-family:'Libre Baskerville',serif;font-size:24px;font-weight:700;color:var(--dn-deep);line-height:1;margin-bottom:4px}
+.kpi-s{font-size:10px;color:var(--text3)}
+.kpi-label{font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:var(--text3);font-weight:700}
+
+/* MINI KPI ROW */
+.mkpi{display:flex;gap:8px;flex-wrap:wrap}
+.mkpi-item{flex:1;min-width:100px;background:var(--bg);border-radius:6px;padding:10px 12px;text-align:center}
+.mkpi-v{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:var(--dn-deep)}
+.mkpi-l{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);font-weight:600;margin-top:2px}
+
+/* CHARTS */
+.ch-wrap{position:relative;height:240px}
+.ch-wrap.tall{height:320px}
+.ch-wrap.short{height:180px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;max-height:500px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:5}
+th{padding:9px 14px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:var(--text3);background:#F8F9FB;border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap}
+td{padding:8px 14px;border-bottom:1px solid rgba(48,69,92,.03);white-space:nowrap}
+tr:hover td{background:#F6F8FA}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700}
+.tag-g{background:rgba(46,139,87,.1);color:var(--green)}
+.tag-y{background:rgba(212,136,15,.1);color:var(--amber)}
+.tag-r{background:rgba(192,57,43,.1);color:var(--red)}
+
+/* EFFICIENCY BAR */
+.eff-bar{height:8px;border-radius:4px;background:#E8ECF0;overflow:hidden;width:120px;display:inline-block;vertical-align:middle;margin-right:8px}
+.eff-fill{height:100%;border-radius:4px;transition:width .3s}
+
+/* RANKING */
+.rank-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(48,69,92,.04)}
+.rank-row:last-child{border:none}
+.rank-num{width:24px;height:24px;border-radius:50%;background:var(--dn-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.rank-num.top3{background:var(--dn-light);color:var(--dn-deep)}
+.rank-name{flex:1;font-size:12px;font-weight:500}
+.rank-val{font-family:'Libre Baskerville',serif;font-size:14px;font-weight:700;color:var(--dn-deep)}
+.rank-bar-bg{width:100px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;flex-shrink:0}
+.rank-bar-fill{height:100%;background:linear-gradient(90deg,var(--dn-dark),var(--dn-light));border-radius:3px}
+
+/* SECTION TITLE */
+.sec{margin-bottom:14px}
+.sec-t{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--dn-deep)}
+.sec-s{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* SUSTAINABILITY SUMMARY TABLE */
+.sus-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(48,69,92,.05)}
+.sus-row:last-child{border:none}
+.sus-metric{font-size:13px;font-weight:500;color:var(--text)}
+.sus-val{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--dn-deep)}
+.sus-unit{font-size:10px;color:var(--text3);margin-left:4px}
+
+/* VIRESCO CORNER */
+.v-corner{position:fixed;bottom:16px;left:20px;display:flex;align-items:center;gap:7px;opacity:.4;transition:opacity .3s;z-index:50}
+.v-corner:hover{opacity:.8}
+.v-mark{width:24px;height:24px;border-radius:5px;background:linear-gradient(135deg,#285c4d,#71cc98);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;color:#fff}
+.v-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600}
+
+/* FOOTER */
+.ftr{text-align:center;padding:24px 32px;border-top:1px solid var(--border);background:#fff;font-size:10px;color:var(--text3)}
+.ftr b{color:var(--dn-dark);letter-spacing:1.5px;text-transform:uppercase}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.g6{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}.g23,.g32{grid-template-columns:1fr}}
+@media(max-width:768px){.g6,.g4,.g3,.g2{grid-template-columns:1fr}.span2,.span3{grid-column:span 1}.hdr-main,.nav,.fbar,.main{padding-left:16px;padding-right:16px}.hdr-sub{display:none}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:0}::-webkit-scrollbar-thumb{background:rgba(48,69,92,.1);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-main">
+    <div class="hdr-left">
+      <div class="logo">
+        <svg viewBox="0 0 28 28" fill="none"><path d="M14 3L26 24H2L14 3Z" fill="#68BCD4" opacity=".85"/><path d="M14 9L21 24H7L14 9Z" fill="#30455C" opacity=".7"/></svg>
+        <span class="logo-text">DENALI</span>
+      </div>
+      <div class="hdr-sep"></div>
+      <span class="hdr-sub">Organics Reporting Portal</span>
+    </div>
+    <div class="hdr-right">
+      <span id="upStatus" class="up-status">No data loaded</span>
+      <button class="up-btn" id="dlReport" onclick="generatePDF()" style="display:none;background:rgba(104,188,212,.15);border-color:rgba(104,188,212,.3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        Download Report
+      </button>
+      <label class="up-btn" for="fileInput">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Target Excel
+      </label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    </div>
+  </div>
+  <!-- Master Program Tabs -->
+  <div class="prog-bar">
+    <button class="prog-tab active" data-prog="target" onclick="switchProg(this)">Target Program</button>
+    <button class="prog-tab" data-prog="loose" onclick="switchProg(this)">Loose Organics</button>
+    <button class="prog-tab" data-prog="summary" onclick="switchProg(this)">Program Summary</button>
+  </div>
+  <!-- TARGET PROGRAM SECTION -->
+  <div class="prog-section active" id="prog-target">
+  <div class="nav" id="navBar">
+    <button class="nav-tab active" data-page="overview" onclick="showPage(this,'target')">Overview</button>
+    <button class="nav-tab" data-page="sustainability" onclick="showPage(this,'target')">Sustainability</button>
+    <button class="nav-tab" data-page="operations" onclick="showPage(this,'target')">Operations</button>
+    <button class="nav-tab" data-page="stores" onclick="showPage(this,'target')">Store Rankings</button>
+    <button class="nav-tab" data-page="intake" onclick="showPage(this,'target')">Intake Log</button>
+  </div>
+</header>
+
+<div class="fbar" id="filterBar">
+  <div class="fg"><span class="fl">Period</span>
+    <div class="ptabs">
+      <button class="ptab active" data-p="mtd" onclick="setP(this)">MTD</button>
+      <button class="ptab" data-p="qtd" onclick="setP(this)">QTD</button>
+      <button class="ptab" data-p="ytd" onclick="setP(this)">YTD</button>
+      <button class="ptab" data-p="all" onclick="setP(this)">All</button>
+    </div>
+  </div>
+  <div class="fsep"></div>
+  <div class="fg"><span class="fl">Store</span><select id="fStore"><option value="all">All Stores</option></select></div>
+  <div class="fg"><span class="fl">Load</span><select id="fLoad"><option value="all">All Loads</option></select></div>
+  <div class="fsep"></div>
+  <div class="fg"><span class="fl">Month</span><select id="fMonth"><option value="all">All</option></select></div>
+  <div class="fg"><span class="fl">Year</span><select id="fYear"><option value="all">All</option></select></div>
+</div>
+
+<main class="main">
+  <div id="emptyState" class="empty">
+    <div class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+    <h2>Import Your Intake Log</h2>
+    <p>Upload the Target intake Excel file to generate the full reporting portal with sustainability metrics, operational analytics, and store rankings.</p>
+  </div>
+
+  <div id="dash" style="display:none">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="pg-overview">
+      <div class="sec"><div class="sec-t">Performance Overview</div><div class="sec-s" id="periodLabel">All Time</div></div>
+      <div class="grid g6" id="kpiRow" style="margin-bottom:14px"></div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Tonnage by Month</div><div class="ch-wrap"><canvas id="chMonthTons"></canvas></div></div>
+        <div class="card"><div class="card-t">Sustainability Impact by Month</div><div class="ch-wrap"><canvas id="chMonthSus"></canvas></div></div>
+      </div>
+      <div class="grid g23" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Weekly Volume Trend</div><div class="ch-wrap"><canvas id="chWeekly"></canvas></div></div>
+        <div class="card"><div class="card-t">Material by Weight</div><div class="ch-wrap"><canvas id="chWeight"></canvas></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card"><div class="card-t">Load Efficiency Over Time</div><div class="ch-wrap"><canvas id="chEffTrend"></canvas></div></div>
+        <div class="card"><div class="card-t">Stores per Load</div><div class="ch-wrap"><canvas id="chStoresLoad"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- SUSTAINABILITY -->
+    <div class="page" id="pg-sustainability">
+      <div class="sec"><div class="sec-t">Sustainability Impact Report</div><div class="sec-s">EPA standard factors · 60% digestor efficiency · CARB methodology (0.62 tCO₂e/ton)</div></div>
+      <div class="grid g3" style="margin-bottom:14px" id="susKpis"></div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-t">YTD Sustainability Summary</div>
+          <div id="susSummary"></div>
+        </div>
+        <div class="card"><div class="card-t">GHG Avoided by Month (tCO₂e)</div><div class="ch-wrap"><canvas id="chGHG"></canvas></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Biogas Yield & Energy Generated</div><div class="ch-wrap"><canvas id="chBioEnergy"></canvas></div></div>
+        <div class="card"><div class="card-t">Real-World Equivalents</div><div class="ch-wrap"><canvas id="chEquiv"></canvas></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">CO₂e Avoided by Store</div><div class="ch-wrap tall"><canvas id="chGHGStore"></canvas></div></div>
+        <div class="card">
+          <div class="card-t">Top Carbon Contributors</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(43,91,138,.06),rgba(104,188,212,.06));border-radius:8px">
+            <div style="text-align:center">
+              <div style="font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--dn-deep)" id="carbonTotal">—</div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);font-weight:600">Total lbs Carbon</div>
+            </div>
+            <div style="width:1px;height:36px;background:var(--border)"></div>
+            <div style="text-align:center">
+              <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--dn-mid)" id="carbonPPM">150,000 ppm</div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);font-weight:600">Carbon Content</div>
+            </div>
+            <div style="width:1px;height:36px;background:var(--border)"></div>
+            <div style="text-align:center">
+              <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--dn-mid)" id="carbonPct">15%</div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);font-weight:600">of Total Weight</div>
+            </div>
+          </div>
+          <div class="ch-wrap tall"><canvas id="chCarbon"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPERATIONS -->
+    <div class="page" id="pg-operations">
+      <div class="sec"><div class="sec-t">Operational Analytics</div><div class="sec-s">Load efficiency, frequency, and capacity metrics</div></div>
+      <div class="grid g4" style="margin-bottom:14px" id="opsKpis"></div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Load Efficiency Scores</div><div class="ch-wrap tall"><canvas id="chEffScores"></canvas></div></div>
+        <div class="card"><div class="card-t">Bins per Load Distribution</div><div class="ch-wrap tall"><canvas id="chBinsDist"></canvas></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Load Frequency by Store (Top 20)</div><div class="ch-wrap tall"><canvas id="chFreqStore"></canvas></div></div>
+        <div class="card"><div class="card-t">Avg Weight per Bin by Store (Top 20)</div><div class="ch-wrap tall"><canvas id="chAvgBinStore"></canvas></div></div>
+      </div>
+      <div class="card" style="margin-bottom:14px"><div class="card-t">Load Detail Table</div>
+        <div class="tbl-wrap"><table><thead id="loadTH"></thead><tbody id="loadTB"></tbody></table></div>
+      </div>
+
+      <!-- FREIGHT COST ANALYSIS -->
+      <div class="sec" style="margin-top:28px"><div class="sec-t">Freight Cost Analysis</div><div class="sec-s">$600/load standard route · Consolidation warehouse → Turtle Lake, WI · 95% efficiency target</div></div>
+      <div class="grid g6" style="margin-bottom:14px" id="freightKpis"></div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-t">Excess Freight Cost per Load</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Red = wasted spend due to underutilized capacity vs. 95% target</div>
+          <div class="ch-wrap tall"><canvas id="chFreightExcess"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-t">Current vs. Optimized Truck Count</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Fewer trucks needed at 95% bin capacity (136 bins/truck)</div>
+          <div class="ch-wrap tall"><canvas id="chFreightCompare"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STORE RANKINGS -->
+    <div class="page" id="pg-stores">
+      <div class="sec"><div class="sec-t">Store Rankings</div><div class="sec-s">Running totals and per-store sustainability impact</div></div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card" style="max-height:600px;overflow-y:auto">
+          <div class="card-t">Stores Ranked by Total Weight</div>
+          <div id="rankWeight"></div>
+        </div>
+        <div class="card" style="max-height:600px;overflow-y:auto">
+          <div class="card-t">Stores Ranked by CO₂e Avoided</div>
+          <div id="rankCO2"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px"><div class="card-t">Store Performance Summary</div>
+        <div class="tbl-wrap"><table><thead id="storeTH"></thead><tbody id="storeTB"></tbody></table></div>
+      </div>
+      <div class="grid g2">
+        <div class="card"><div class="card-t">Tons per Store per Month</div><div class="ch-wrap tall"><canvas id="chStoreMo"></canvas></div></div>
+        <div class="card"><div class="card-t">Projected Annualized Tonnage by Store (Top 15)</div><div class="ch-wrap tall"><canvas id="chStoreProj"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- INTAKE LOG -->
+    <div class="page" id="pg-intake">
+      <div class="sec"><div class="sec-t">Intake Log</div><div class="sec-s" id="intakeSub">All records</div></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="card-t" style="margin:0" id="intakeCount">0 records</span>
+          <button class="up-btn" style="background:var(--card);color:var(--dn-dark);border-color:var(--border)" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="tbl-wrap"><table><thead id="intakeTH"></thead><tbody id="intakeTB"></tbody></table></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="v-corner"><div class="v-mark">V</div><span class="v-label">Viresco AD</span></div>
+  </div><!-- end prog-target -->
+
+  <!-- LOOSE ORGANICS PROGRAM SECTION -->
+  <div class="prog-section" id="prog-loose">
+    <div class="nav">
+      <button class="nav-tab active" data-page="lo-overview" onclick="showPage(this,'loose')">Overview</button>
+      <button class="nav-tab" data-page="lo-sustainability" onclick="showPage(this,'loose')">Sustainability</button>
+      <button class="nav-tab" data-page="lo-customers" onclick="showPage(this,'loose')">Customer Rankings</button>
+      <button class="nav-tab" data-page="lo-intake" onclick="showPage(this,'loose')">Intake Log</button>
+    </div>
+    <div class="fbar">
+      <div class="fg"><span class="fl">Period</span>
+        <div class="ptabs">
+          <button class="ptab" data-p="mtd" onclick="setLP(this)">MTD</button>
+          <button class="ptab" data-p="qtd" onclick="setLP(this)">QTD</button>
+          <button class="ptab" data-p="ytd" onclick="setLP(this)">YTD</button>
+          <button class="ptab active" data-p="all" onclick="setLP(this)">All</button>
+        </div>
+      </div>
+      <div class="fsep"></div>
+      <div class="fg"><span class="fl">Customer</span><select id="loFCust"><option value="all">All Customers</option></select></div>
+      <div class="fg"><span class="fl">Product</span><select id="loFProd"><option value="all">All Products</option></select></div>
+      <div class="fsep"></div>
+      <div class="fg"><span class="fl">Month</span><select id="loFMonth"><option value="all">All</option></select></div>
+      <div class="fg"><span class="fl">Year</span><select id="loFYear"><option value="all">All</option></select></div>
+      <div class="fsep"></div>
+      <button class="up-btn" onclick="loadLooseData()" style="font-size:11px;padding:6px 14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh Data
+      </button>
+      <span id="loStatus" class="up-status">Not loaded</span>
+    </div>
+
+    <main class="main">
+      <div id="loEmpty" class="empty">
+        <div class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 11-6.219-8.56"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h2>Loose Organics Data</h2>
+        <p>Click "Refresh Data" to load Denali and Organix intake data from the live Google Sheet feed. Only Truck, Load, and Dumpster entries are included.</p>
+      </div>
+
+      <div id="loDash" style="display:none">
+        <div class="page active" id="pg-lo-overview">
+          <div class="sec"><div class="sec-t">Loose Organics Overview</div><div class="sec-s" id="loPeriodLabel">All Time</div></div>
+          <div class="grid g6" style="margin-bottom:14px" id="loKpiRow"></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card"><div class="card-t">Tonnage by Month</div><div class="ch-wrap"><canvas id="loChMonthly"></canvas></div></div>
+            <div class="card"><div class="card-t">Weight by Customer</div><div class="ch-wrap"><canvas id="loChCust"></canvas></div></div>
+          </div>
+          <div class="grid g2">
+            <div class="card"><div class="card-t">Product Type Breakdown</div><div class="ch-wrap"><canvas id="loChProduct"></canvas></div></div>
+            <div class="card"><div class="card-t">Weekly Volume Trend</div><div class="ch-wrap"><canvas id="loChWeekly"></canvas></div></div>
+          </div>
+        </div>
+
+        <div class="page" id="pg-lo-sustainability">
+          <div class="sec"><div class="sec-t">Sustainability Impact — Loose Organics</div><div class="sec-s">EPA standard factors · 60% digestor efficiency</div></div>
+          <div class="grid g3" style="margin-bottom:14px" id="loSusKpis"></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card"><div class="card-t">YTD Sustainability Summary</div><div id="loSusSummary"></div></div>
+            <div class="card"><div class="card-t">GHG Avoided by Month (tCO2e)</div><div class="ch-wrap"><canvas id="loChGHG"></canvas></div></div>
+          </div>
+          <div class="grid g2">
+            <div class="card"><div class="card-t">Biogas & Energy by Month</div><div class="ch-wrap"><canvas id="loChBioEnergy"></canvas></div></div>
+            <div class="card"><div class="card-t">Real-World Equivalents</div><div class="ch-wrap"><canvas id="loChEquiv"></canvas></div></div>
+          </div>
+        </div>
+
+        <div class="page" id="pg-lo-customers">
+          <div class="sec"><div class="sec-t">Customer Rankings</div><div class="sec-s">By total weight</div></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card" style="max-height:600px;overflow-y:auto"><div class="card-t">Customers by Total Weight</div><div id="loRankWeight"></div></div>
+            <div class="card" style="max-height:600px;overflow-y:auto"><div class="card-t">Customers by CO2e Avoided</div><div id="loRankCO2"></div></div>
+          </div>
+          <div class="card"><div class="card-t">Customer Performance Summary</div>
+            <div class="tbl-wrap"><table><thead id="loCustTH"></thead><tbody id="loCustTB"></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="page" id="pg-lo-intake">
+          <div class="sec"><div class="sec-t">Loose Organics Intake Log</div><div class="sec-s" id="loIntakeSub">All records</div></div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span class="card-t" style="margin:0" id="loIntakeCount">0 records</span>
+              <button class="up-btn" style="background:var(--card);color:var(--dn-dark);border-color:var(--border)" onclick="exportLoCSV()">Export CSV</button>
+            </div>
+            <div class="tbl-wrap"><table><thead id="loIntakeTH"></thead><tbody id="loIntakeTB"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div><!-- end prog-loose -->
+
+  <!-- PROGRAM SUMMARY SECTION -->
+  <div class="prog-section" id="prog-summary">
+    <div class="nav">
+      <button class="nav-tab active" data-page="sum-overview" onclick="showPage(this,'summary')">Combined Overview</button>
+      <button class="nav-tab" data-page="sum-sustainability" onclick="showPage(this,'summary')">Combined Sustainability</button>
+    </div>
+    <main class="main">
+      <div class="sec"><div class="sec-t">All Programs Summary</div><div class="sec-s" id="sumPeriodLabel">Combined Target + Loose Organics</div></div>
+      <div id="sumContent">
+        <div class="page active" id="pg-sum-overview">
+          <div class="grid g6" style="margin-bottom:14px" id="sumKpiRow"></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card"><div class="card-t">Combined Monthly Tonnage</div><div class="ch-wrap"><canvas id="sumChMonthly"></canvas></div></div>
+            <div class="card"><div class="card-t">Program Contribution</div><div class="ch-wrap"><canvas id="sumChSplit"></canvas></div></div>
+          </div>
+        </div>
+        <div class="page" id="pg-sum-sustainability">
+          <div class="grid g3" style="margin-bottom:14px" id="sumSusKpis"></div>
+          <div class="grid g2">
+            <div class="card"><div class="card-t">Combined Sustainability Summary</div><div id="sumSusSummary"></div></div>
+            <div class="card"><div class="card-t">GHG by Program</div><div class="ch-wrap"><canvas id="sumChGHG"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div><!-- end prog-summary -->
+<footer class="ftr"><b>Denali</b> · Target Midwest Organics Program · Confidential · Prepared by VIRESCO AD LLC</footer>
+
+<script>
+var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=143;
+
+// Sustainability conversion factors
+var SF={
+  ghg:0.62,         // tCO2e per ton
+  biogas_m:100,     // m3 biogas per ton
+  biogas_eff:0.6,   // 60% methane capture
+  energy_eff:0.4,   // 40% biogas-to-energy
+  energy_mult:10,   // multiplier
+  npk:15,           // kg NPK per ton
+  hh:893,           // m3 CH4 per household/yr
+  car:0.383,        // tCO2e per car/yr (EPA)
+  tree:0.06,        // tCO2e per tree/yr
+  miles:2481,       // miles per tCO2e
+  carbon_ppm:150000 // ppm carbon content
+};
+
+var CARBON_PCT=SF.carbon_ppm/1000000; // 0.15 = 15%
+
+function calc(tons){
+  var ghg=tons*SF.ghg;
+  var biogas=tons*SF.biogas_m*SF.biogas_eff;
+  var energy=biogas*SF.energy_mult*SF.energy_eff;
+  var npk=tons*SF.npk;
+  var hh=biogas/SF.hh;
+  var cars=ghg/SF.car;
+  var trees=ghg/SF.tree;
+  var miles=ghg*SF.miles;
+  var carbonLbs=tons*2000*CARBON_PCT;
+  return{ghg:ghg,biogas:biogas,energy:energy,npk:npk,hh:hh,cars:cars,trees:trees,miles:miles,carbonLbs:carbonLbs};
+}
+
+Chart.register(ChartDataLabels);
+Chart.defaults.color='#8A97A4';Chart.defaults.borderColor='rgba(48,69,92,.04)';Chart.defaults.font.family="'DM Sans',sans-serif";Chart.defaults.font.size=10;Chart.defaults.plugins.legend.labels.boxWidth=10;Chart.defaults.plugins.legend.labels.padding=12;
+Chart.defaults.layout={padding:{top:20,right:5,bottom:0,left:5}};
+// Disable datalabels globally, enable per-chart
+Chart.defaults.plugins.datalabels.display=false;
+
+// Enhanced palette — Denali blues + warm accents + nature tones
+var C={
+  dk:'#30455C',lt:'#68BCD4',
+  // Gradient-feel primaries
+  p1:'#2B5B8A',p2:'#3B8CC4',p3:'#5BA8D9',p4:'#7FC8E8',
+  // Warm accents
+  coral:'#E8836B',amber:'#E8A94D',gold:'#D4A035',peach:'#F0B88A',
+  // Earth & nature
+  sage:'#6BAF7D',moss:'#4A8F5C',teal:'#3A9B98',slate:'#6B7F92',
+  // Neutrals
+  sand:'#C8B88A',bark:'#8B7355',
+  // Status
+  grn:'#2E9E6B',red:'#D64545',warn:'#D4880F',
+  // Alpha versions
+  dkA:'rgba(48,69,92,.55)',ltA:'rgba(104,188,212,.5)',
+  p1A:'rgba(43,91,138,.45)',p2A:'rgba(59,140,196,.4)',p3A:'rgba(91,168,217,.35)',
+  coralA:'rgba(232,131,107,.45)',amberA:'rgba(232,169,77,.45)',
+  sageA:'rgba(107,175,125,.4)',tealA:'rgba(58,155,152,.4)',
+  sandA:'rgba(200,184,138,.4)',grnA:'rgba(46,158,107,.35)'
+};
+
+// Shared datalabel config helpers
+function dlBar(color,suffix){
+  return{display:true,anchor:'end',align:'end',color:color||'#5A6B7A',font:{size:9,weight:600},formatter:function(v){return v>=1000?(v/1000).toFixed(1)+'K':v>=100?Math.round(v):v.toFixed(1);},offset:2,padding:0};
+}
+function dlBarH(color){
+  return{display:true,anchor:'end',align:'end',color:color||'#5A6B7A',font:{size:9,weight:600},formatter:function(v){return v>=1000?(v/1000).toFixed(1)+'K':v>=100?Math.round(v):v.toFixed(1);},offset:4,padding:0};
+}
+function dlLine(color){
+  return{display:true,anchor:'end',align:'top',color:color||'#5A6B7A',font:{size:9,weight:600},formatter:function(v){return v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(1);},offset:4,padding:0};
+}
+function dlNone(){return{display:false};}
+// For charts with many bars (>15), hide labels to avoid clutter
+function dlSmart(count,color){
+  if(count>15)return dlNone();
+  return dlBar(color);
+}
+
+// FILE IMPORT
+document.getElementById('fileInput').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var d=new Uint8Array(ev.target.result);
+      var wb=XLSX.read(d,{type:'array',cellDates:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var json=XLSX.utils.sheet_to_json(ws,{defval:'',range:1});
+      if(!json.length){alert('No data');return;}
+      colMap=detectCols(Object.keys(json[0]));
+      raw=normalize(json);
+      document.getElementById('upStatus').textContent=f.name+' - '+raw.length+' rows';
+      document.getElementById('upStatus').className='up-status on';
+      popFilters();applyF();
+      document.getElementById('emptyState').style.display='none';
+      document.getElementById('dash').style.display='block';
+      document.getElementById('dlReport').style.display='flex';
+    }catch(err){alert('Error: '+err.message);}
+  };r.readAsArrayBuffer(f);
+});
+
+function detectCols(h){
+  var l=h.map(function(x){return x.toLowerCase().trim();}),m={};
+  m.date=h[fi(l,'date')]||h[0];
+  m.load=h[fi(l,'load')]||h[1];
+  m.acct=h[fi(l,'account')]||h[2];
+  m.store=h[fi(l,'store')]||h[3];
+  m.weight=h[fi(l,'weight')]||h[4];
+  m.contam=h[fi(l,'contam')]||h[5];
+  m.image=h[fi(l,'image')]||h[6];
+  return m;
+}
+function fi(arr,s){var i=arr.findIndex(function(x){return x.indexOf(s)>=0;});return i>=0?i:-1;}
+
+function normalize(json){
+  return json.map(function(row){
+    var d=row[colMap.date];
+    if(d instanceof Date){}else if(typeof d==='number')d=new Date((d-25569)*86400*1000);else d=new Date(d);
+    if(isNaN(d))d=new Date();
+    return{
+      date:d,
+      load:parseInt(row[colMap.load])||0,
+      acct:String(row[colMap.acct]||''),
+      store:parseInt(row[colMap.store])||0,
+      weight:parseFloat(String(row[colMap.weight]).replace(/[^0-9.\-]/g,''))||0,
+      contam:String(row[colMap.contam]||'').toLowerCase()==='true',
+      image:row[colMap.image]||''
+    };
+  }).sort(function(a,b){return a.date-b.date||a.load-b.load||a.store-b.store;});
+}
+
+// FILTERS
+function popFilters(){
+  var stores=unique(raw,'store').sort(function(a,b){return a-b;});
+  var loads=unique(raw,'load').sort(function(a,b){return a-b;});
+  var months=Array.from(new Set(raw.map(function(r){return r.date.getMonth();}))).sort(function(a,b){return a-b;});
+  var years=Array.from(new Set(raw.map(function(r){return r.date.getFullYear();}))).sort();
+  var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  fillSel('fStore',stores.map(function(s){return{v:s,t:'Store #'+s};}));
+  fillSel('fLoad',loads.map(function(l){return{v:l,t:'Load #'+l};}));
+  fillSel('fMonth',months.map(function(m){return{v:m,t:mn[m]};}));
+  fillSel('fYear',years.map(function(y){return{v:y,t:String(y)};}));
+  ['fStore','fLoad','fMonth','fYear'].forEach(function(id){document.getElementById(id).onchange=applyF;});
+}
+function fillSel(id,opts){
+  var s=document.getElementById(id);var first=s.options[0].textContent;
+  s.innerHTML='<option value="all">'+first+'</option>';
+  opts.forEach(function(o){var opt=document.createElement('option');opt.value=o.v;opt.textContent=o.t;s.appendChild(opt);});
+}
+function unique(arr,key){var s={};arr.forEach(function(r){s[r[key]]=true;});return Object.keys(s).map(Number);}
+
+function setP(btn){document.querySelectorAll('.ptab').forEach(function(t){t.classList.remove('active');});btn.classList.add('active');curP=btn.getAttribute('data-p');applyF();}
+function showPage(btn,prog){
+  var section=document.getElementById('prog-'+prog);
+  section.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  section.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  var pageId=btn.getAttribute('data-page');
+  document.getElementById('pg-'+pageId).classList.add('active');
+}
+
+function switchProg(btn){
+  document.querySelectorAll('.prog-tab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  document.querySelectorAll('.prog-section').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('prog-'+btn.getAttribute('data-prog')).classList.add('active');
+  if(btn.getAttribute('data-prog')==='summary')renderSummary();
+}
+
+function applyF(){
+  var store=document.getElementById('fStore').value;
+  var load=document.getElementById('fLoad').value;
+  var month=document.getElementById('fMonth').value;
+  var year=document.getElementById('fYear').value;
+  var data=raw.slice();
+  if(store!=='all')data=data.filter(function(r){return r.store===parseInt(store);});
+  if(load!=='all')data=data.filter(function(r){return r.load===parseInt(load);});
+  if(month!=='all')data=data.filter(function(r){return r.date.getMonth()===parseInt(month);});
+  if(year!=='all')data=data.filter(function(r){return r.date.getFullYear()===parseInt(year);});
+  var now=new Date();
+  if(curP==='mtd')data=data.filter(function(r){return r.date.getMonth()===now.getMonth()&&r.date.getFullYear()===now.getFullYear();});
+  else if(curP==='qtd'){var qs=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);data=data.filter(function(r){return r.date>=qs&&r.date<=now;});}
+  else if(curP==='ytd'){var ys=new Date(now.getFullYear(),0,1);data=data.filter(function(r){return r.date>=ys&&r.date<=now;});}
+  filtered=data;
+  var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
+  document.getElementById('periodLabel').textContent=pl[curP]+' — '+filtered.length+' bins';
+  render();
+}
+
+// AGGREGATORS
+function aggLoads(data){
+  var g={};
+  data.forEach(function(r){
+    if(!g[r.load])g[r.load]={load:r.load,date:r.date,bins:0,weight:0,stores:{},contam:0};
+    g[r.load].bins++;g[r.load].weight+=r.weight;g[r.load].stores[r.store]=true;
+    if(r.contam)g[r.load].contam++;
+  });
+  return Object.values(g).map(function(l){l.storeCount=Object.keys(l.stores).length;l.eff=(l.bins/MAX_BINS*100);l.tons=l.weight/2000;return l;}).sort(function(a,b){return a.load-b.load;});
+}
+function aggStores(data){
+  var g={};
+  data.forEach(function(r){
+    if(!g[r.store])g[r.store]={store:r.store,bins:0,weight:0,loads:{},contam:0};
+    g[r.store].bins++;g[r.store].weight+=r.weight;g[r.store].loads[r.load]=true;
+    if(r.contam)g[r.store].contam++;
+  });
+  return Object.values(g).map(function(s){s.loadCount=Object.keys(s.loads).length;s.tons=s.weight/2000;s.avgBin=s.bins>0?s.weight/s.bins:0;return s;}).sort(function(a,b){return b.weight-a.weight;});
+}
+function aggMonths(data){
+  var g={},mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  data.forEach(function(r){
+    var k=r.date.getFullYear()+'-'+String(r.date.getMonth()).padStart(2,'0');
+    if(!g[k])g[k]={key:k,label:mn[r.date.getMonth()]+' '+r.date.getFullYear(),bins:0,weight:0,loads:{}};
+    g[k].bins++;g[k].weight+=r.weight;g[k].loads[r.load]=true;
+  });
+  return Object.values(g).map(function(m){m.loadCount=Object.keys(m.loads).length;m.tons=m.weight/2000;return m;}).sort(function(a,b){return a.key<b.key?-1:1;});
+}
+function aggWeeks(data){
+  var g={};
+  data.forEach(function(r){
+    var d=new Date(r.date);d.setDate(d.getDate()-d.getDay());
+    var k=d.toISOString().split('T')[0];
+    if(!g[k])g[k]={key:k,date:d,bins:0,weight:0,loads:{}};
+    g[k].bins++;g[k].weight+=r.weight;g[k].loads[r.load]=true;
+  });
+  return Object.values(g).map(function(w){w.tons=w.weight/2000;w.loadCount=Object.keys(w.loads).length;return w;}).sort(function(a,b){return a.key<b.key?-1:1;});
+}
+
+// RENDER
+function render(){
+  renderOverview();renderSustainability();renderOperations();renderStores();renderIntake();
+}
+function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function fmt(v,d){d=d||0;if(v>=1e6)return(v/1e6).toFixed(1)+'M';if(v>=1e3)return(v/1e3).toFixed(1)+'K';return v.toFixed(d);}
+
+// SVG Icons (16x16 viewBox, stroke-based)
+var IC={
+  scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18M5.5 7L12 3l6.5 4M5.5 17L12 21l6.5-4"/></svg>',
+  cube:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8C8 10 5.9 16.17 3.82 21.34M17 8A5 5 0 0121 3c-1 0-6 2-9 5M17 8l-4 4"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  gauge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+  cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
+  atom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(0 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>',
+  flame:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  plant:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 00-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>',
+  house:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  car:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8h2a2 2 0 012 2v6h-2M6 8H4a2 2 0 00-2 2v6h2M7 16h10M5.5 8l1.5-4h10l1.5 4"/><circle cx="7" cy="16" r="2"/><circle cx="17" cy="16" r="2"/></svg>',
+  tree:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V8"/><path d="M5 12l7-8 7 8"/><path d="M3 17l9-7 9 7"/></svg>',
+  road:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19L8 5M16 5l4 14M12 6v2M12 12v2M12 18v2"/></svg>',
+  calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  boxes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h8v8H2zM14 7h8v8h-8zM8 15h8v8H8z"/></svg>',
+  route:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 000-7h-11a3.5 3.5 0 010-7H15"/><circle cx="18" cy="5" r="3"/></svg>',
+  weight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 18M8 18V6a4 4 0 018 0v12"/><circle cx="12" cy="6" r="2"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  truck:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+};
+
+function kpiHTML(icon,bg,color,label,value,sub){
+  return '<div class="card kpi"><div class="kpi-head"><div class="kpi-label">'+label+'</div><div class="kpi-icon" style="background:'+bg+';color:'+color+'">'+icon+'</div></div><div class="kpi-v">'+value+'</div><div class="kpi-s">'+sub+'</div></div>';
+}
+
+// OVERVIEW
+function renderOverview(){
+  var d=filtered,totalW=0,totalBins=d.length,contamCount=0;
+  d.forEach(function(r){totalW+=r.weight;if(r.contam)contamCount++;});
+  var tons=totalW/2000;var sus=calc(tons);
+  var loads=aggLoads(d);var stores=aggStores(d);
+  var avgEff=loads.length>0?loads.reduce(function(s,l){return s+l.eff;},0)/loads.length:0;
+  var weeks=aggWeeks(d);
+  var avgTonsWk=0,lowWk=0,highWk=0;
+  if(weeks.length>0){
+    var wkTons=weeks.map(function(w){return w.tons;});
+    avgTonsWk=wkTons.reduce(function(a,b){return a+b;},0)/wkTons.length;
+    lowWk=Math.min.apply(null,wkTons);
+    highWk=Math.max.apply(null,wkTons);
+  }
+
+  // Days in filtered range
+  var daySpan=1;
+  if(d.length>1){daySpan=Math.max(1,Math.ceil((d[d.length-1].date-d[0].date)/86400000));}
+  var annualized=tons/daySpan*365;
+
+  var bB='rgba(43,91,138,.1)',cB='#2B5B8A'; // blue icon bg/color
+  var bG='rgba(46,158,107,.1)',cG='#2E9E6B'; // green
+  var bT='rgba(58,155,152,.1)',cT='#3A9B98'; // teal
+  var bA='rgba(232,169,77,.1)',cA='#D4880F'; // amber
+  document.getElementById('kpiRow').innerHTML=
+    kpiHTML(IC.scale,bB,cB,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW))+
+    kpiHTML(IC.cube,bT,cT,'Total Bins',fmt(totalBins),loads.length+' loads')+
+    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(sus.ghg,1),'tCO₂e')+
+    kpiHTML(IC.pin,bB,cB,'Active Stores',stores.length,'of 45')+
+    kpiHTML(IC.gauge,bA,cA,'Avg Load Efficiency',avgEff.toFixed(0)+'%',fmt(MAX_BINS)+' max bins')+
+    kpiHTML(IC.trend,bT,cT,'Avg Tons / Week',fmt(avgTonsWk,1),'↓ '+fmt(lowWk,1)+' low · ↑ '+fmt(highWk,1)+' high');
+
+  // Monthly tons chart
+  var mo=aggMonths(d);
+  kill('monthTons');
+  charts['monthTons']=new Chart(document.getElementById('chMonthTons'),{
+    type:'bar',data:{labels:mo.map(function(m){return m.label;}),datasets:[
+      {label:'Tons',data:mo.map(function(m){return m.tons;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:6,datalabels:dlBar(C.p1)},
+      {label:'Loads',data:mo.map(function(m){return m.loadCount;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.coral);g.addColorStop(1,C.peach);return g;},borderColor:C.coral,borderWidth:0,borderRadius:6,yAxisID:'y1',datalabels:dlBar(C.coral)}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
+  });
+
+  // Monthly sustainability
+  kill('monthSus');
+  charts['monthSus']=new Chart(document.getElementById('chMonthSus'),{
+    type:'line',data:{labels:mo.map(function(m){return m.label;}),datasets:[
+      {label:'GHG Avoided (tCO₂e)',data:mo.map(function(m){return calc(m.tons).ghg;}),borderColor:C.p1,backgroundColor:C.p1A,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:C.p1,pointBorderWidth:2,borderWidth:2.5,datalabels:dlLine(C.p1)},
+      {label:'Households Powered',data:mo.map(function(m){return calc(m.tons).hh;}),borderColor:C.teal,backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:C.teal,pointBorderWidth:2,borderWidth:2.5,yAxisID:'y1',datalabels:dlLine(C.teal)}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
+  });
+
+  // Weekly trend
+  kill('weekly');
+  charts['weekly']=new Chart(document.getElementById('chWeekly'),{
+    type:'line',data:{labels:weeks.map(function(w){return w.key;}),datasets:[
+      {label:'Tons/Week',data:weeks.map(function(w){return w.tons;}),borderColor:C.p2,backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.p2A);g.addColorStop(1,'rgba(59,140,196,0.02)');return g;},fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:C.p2,pointBorderWidth:2,borderWidth:2.5,datalabels:dlSmart(weeks.length,C.p2)}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Weight distribution
+  kill('weightDist');
+  var bins=[0,0,0,0];
+  d.forEach(function(r){if(r.weight<325)bins[0]++;else if(r.weight<375)bins[1]++;else if(r.weight<425)bins[2]++;else bins[3]++;});
+  charts['weightDist']=new Chart(document.getElementById('chWeight'),{
+    type:'doughnut',data:{labels:['300-324 lbs','325-374 lbs','375-424 lbs','425-450 lbs'],datasets:[{data:bins,backgroundColor:[C.p1,C.lt,C.amber,C.sage],borderColor:'#fff',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right'},datalabels:{display:true,color:'#fff',font:{size:10,weight:700},formatter:function(v,ctx){var total=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return total>0?(v/total*100).toFixed(0)+'%':'';}}}}
+  });
+
+  // Efficiency trend
+  kill('effTrend');
+  charts['effTrend']=new Chart(document.getElementById('chEffTrend'),{
+    type:'line',data:{labels:loads.map(function(l){return'#'+l.load;}),datasets:[
+      {label:'Efficiency %',data:loads.map(function(l){return l.eff;}),borderColor:C.p2,backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,'rgba(59,140,196,.25)');g.addColorStop(1,'rgba(59,140,196,0.02)');return g;},fill:true,tension:.3,pointRadius:3,pointBackgroundColor:loads.map(function(l){return l.eff>=85?C.grn:l.eff>=60?C.warn:C.red;}),pointBorderColor:'#fff',pointBorderWidth:1,borderWidth:2.5,datalabels:dlSmart(loads.length,C.p2)},
+      {label:'85% Target',data:loads.map(function(){return 85;}),borderColor:C.red,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,datalabels:dlNone()}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false},scales:{y:{beginAtZero:true,max:110,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Stores per load
+  kill('storesLoad');
+  charts['storesLoad']=new Chart(document.getElementById('chStoresLoad'),{
+    type:'bar',data:{labels:loads.map(function(l){return'#'+l.load;}),datasets:[{label:'Stores',data:loads.map(function(l){return l.storeCount;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.teal);g.addColorStop(1,C.lt);return g;},borderColor:C.teal,borderWidth:0,borderRadius:4,datalabels:dlSmart(loads.length,C.teal)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+}
+
+// SUSTAINABILITY
+function renderSustainability(){
+  var totalW=0;filtered.forEach(function(r){totalW+=r.weight;});
+  var tons=totalW/2000;var s=calc(tons);
+  var kpis=[
+    {l:'GHG Avoided',v:fmt(s.ghg,1),s:'tCO₂e'},
+    {l:'Lbs of Carbon',v:fmt(s.carbonLbs,0),s:'at 150K ppm'},
+    {l:'Biogas Yield',v:fmt(s.biogas,0),s:'m³ CH₄'},
+    {l:'Energy Generated',v:fmt(s.energy,0),s:'kWh'},
+    {l:'NPK Fertilizer',v:fmt(s.npk,0),s:'kg'},
+    {l:'Households Powered',v:fmt(s.hh,1),s:'equivalent'},
+    {l:'Cars Off Road',v:fmt(s.cars,1),s:'equivalent'},
+    {l:'Trees Equivalent',v:fmt(s.trees,0),s:'planted'},
+    {l:'Miles Not Driven',v:fmt(s.miles,0),s:'equivalent'},
+    {l:'Annualized Tons',v:fmt(tons>0?tons/Math.max(1,Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000))*365:0,0),s:'projected'}
+  ];
+  var bB='rgba(43,91,138,.1)',cB='#2B5B8A';
+  var bG='rgba(46,158,107,.1)',cG='#2E9E6B';
+  var bT='rgba(58,155,152,.1)',cT='#3A9B98';
+  var bA='rgba(232,169,77,.1)',cA='#D4880F';
+  var bR='rgba(232,131,107,.1)',cR='#C85A42';
+  var annTons=tons>0?tons/Math.max(1,Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000))*365:0;
+  document.getElementById('susKpis').innerHTML=
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO₂e')+
+    kpiHTML(IC.atom,bB,cB,'Lbs of Carbon',fmt(s.carbonLbs,0),'at 150K ppm')+
+    kpiHTML(IC.flame,bR,cR,'Biogas Yield',fmt(s.biogas,0),'m³ CH₄')+
+    kpiHTML(IC.bolt,bA,cA,'Energy Generated',fmt(s.energy,0),'kWh')+
+    kpiHTML(IC.plant,bG,cG,'NPK Fertilizer',fmt(s.npk,0),'kg')+
+    kpiHTML(IC.house,bT,cT,'Households Powered',fmt(s.hh,1),'equivalent')+
+    kpiHTML(IC.car,bB,cB,'Cars Off Road',fmt(s.cars,1),'equivalent')+
+    kpiHTML(IC.tree,bG,cG,'Trees Equivalent',fmt(s.trees,0),'planted')+
+    kpiHTML(IC.road,bA,cA,'Miles Not Driven',fmt(s.miles,0),'equivalent')+
+    kpiHTML(IC.calendar,bT,cT,'Annualized Tons',fmt(annTons,0),'projected');
+
+  // Summary table
+  var rows=[
+    {m:'Total Tons of Organics',v:tons.toFixed(1),u:'Tons'},
+    {m:'Lbs of Carbon (150K ppm)',v:fmt(s.carbonLbs),u:'lbs'},
+    {m:'GHG Avoided',v:s.ghg.toFixed(1),u:'tCO₂e'},
+    {m:'Biogas Yield from AD',v:fmt(s.biogas),u:'m³ CH₄'},
+    {m:'Energy Generated',v:fmt(s.energy),u:'kWh'},
+    {m:'Fertilizer Replacement (NPK)',v:fmt(s.npk),u:'kg'},
+    {m:'Households Powered',v:s.hh.toFixed(1),u:'households'},
+    {m:'Cars Off Road Equivalent',v:s.cars.toFixed(1),u:'cars/yr'},
+    {m:'Trees Planted Equivalent',v:fmt(s.trees),u:'trees/yr'},
+    {m:'Miles Not Driven',v:fmt(s.miles),u:'miles'}
+  ];
+  document.getElementById('susSummary').innerHTML=rows.map(function(r){
+    return '<div class="sus-row"><span class="sus-metric">'+r.m+'</span><span><span class="sus-val">'+r.v+'</span><span class="sus-unit">'+r.u+'</span></span></div>';
+  }).join('');
+
+  // GHG by month
+  var mo=aggMonths(filtered);
+  kill('ghg');
+  charts['ghg']=new Chart(document.getElementById('chGHG'),{
+    type:'bar',data:{labels:mo.map(function(m){return m.label;}),datasets:[{label:'tCO₂e',data:mo.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderColor:C.sage,borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Biogas + Energy
+  kill('bioEnergy');
+  charts['bioEnergy']=new Chart(document.getElementById('chBioEnergy'),{
+    type:'bar',data:{labels:mo.map(function(m){return m.label;}),datasets:[
+      {label:'Biogas (m³)',data:mo.map(function(m){return calc(m.tons).biogas;}),backgroundColor:C.p2A,borderColor:C.p2,borderWidth:0,borderRadius:6,datalabels:dlBar(C.p2)},
+      {label:'Energy (kWh)',data:mo.map(function(m){return calc(m.tons).energy;}),backgroundColor:C.amberA,borderColor:C.amber,borderWidth:0,borderRadius:6,yAxisID:'y1',datalabels:dlBar(C.amber)}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
+  });
+
+  // Equivalents
+  kill('equiv');
+  charts['equiv']=new Chart(document.getElementById('chEquiv'),{
+    type:'bar',data:{labels:['Cars Off Road','Trees Planted','Households\nPowered'],datasets:[{data:[s.cars,s.trees,s.hh],backgroundColor:[C.p1,C.sage,C.teal],borderColor:[C.p1,C.sage,C.teal],borderWidth:0,borderRadius:8,datalabels:dlBarH(C.dk)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // CO2e by store
+  var st=aggStores(filtered).slice(0,25);
+  kill('ghgStore');
+  charts['ghgStore']=new Chart(document.getElementById('chGHGStore'),{
+    type:'bar',data:{labels:st.map(function(s){return'Store #'+s.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Carbon total header
+  document.getElementById('carbonTotal').textContent=fmt(s.carbonLbs);
+
+  // Top Carbon Contributors (by store, horizontal bar)
+  var stCarbon=aggStores(filtered).map(function(st){
+    return{store:st.store,carbonLbs:st.weight*CARBON_PCT};
+  }).sort(function(a,b){return b.carbonLbs-a.carbonLbs;}).slice(0,15);
+  kill('carbon');
+  charts['carbon']=new Chart(document.getElementById('chCarbon'),{
+    type:'bar',data:{
+      labels:stCarbon.map(function(s){return'Store #'+s.store;}),
+      datasets:[{
+        label:'Lbs of Carbon',
+        data:stCarbon.map(function(s){return s.carbonLbs;}),
+        backgroundColor:function(ctx){
+          var i=ctx.dataIndex;var total=stCarbon.length;
+          var ratio=1-i/total;
+          var r=Math.round(43+ratio*40);
+          var g=Math.round(91+ratio*60);
+          var b=Math.round(138+ratio*30);
+          return 'rgba('+r+','+g+','+b+',0.7)';
+        },
+        borderColor:function(ctx){
+          var i=ctx.dataIndex;var total=stCarbon.length;
+          var ratio=1-i/total;
+          var r=Math.round(43+ratio*40);
+          var g=Math.round(91+ratio*60);
+          var b=Math.round(138+ratio*30);
+          return 'rgb('+r+','+g+','+b+')';
+        },
+        borderWidth:1.5,
+        borderRadius:5,
+        datalabels:dlBarH(C.p1)
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'},title:{display:true,text:'Lbs of Carbon',font:{size:10},color:'#8A97A4'}},y:{grid:{display:false}}}
+    }
+  });
+}
+
+// OPERATIONS
+function renderOperations(){
+  var loads=aggLoads(filtered);
+  var avgBins=loads.length>0?loads.reduce(function(s,l){return s+l.bins;},0)/loads.length:0;
+  var avgEff=loads.length>0?loads.reduce(function(s,l){return s+l.eff;},0)/loads.length:0;
+  var avgStores=loads.length>0?loads.reduce(function(s,l){return s+l.storeCount;},0)/loads.length:0;
+  var avgWt=filtered.length>0?filtered.reduce(function(s,r){return s+r.weight;},0)/filtered.length:0;
+  var contamRate=filtered.length>0?(filtered.filter(function(r){return r.contam;}).length/filtered.length*100):0;
+
+  var kpis_placeholder=0; // using direct icon rendering below
+  var bB='rgba(43,91,138,.1)',cB='#2B5B8A';
+  var bG='rgba(46,158,107,.1)',cG='#2E9E6B';
+  var bT='rgba(58,155,152,.1)',cT='#3A9B98';
+  var bA='rgba(232,169,77,.1)',cA='#D4880F';
+  var bR='rgba(214,69,69,.1)',cR='#D64545';
+  var loadsAbove=loads.filter(function(l){return l.eff>=85;}).length;
+  var loadsBelow=loads.filter(function(l){return l.eff<60;}).length;
+  document.getElementById('opsKpis').innerHTML=
+    kpiHTML(IC.cube,bB,cB,'Avg Bins/Load',avgBins.toFixed(0),'of '+MAX_BINS+' max')+
+    kpiHTML(IC.gauge,bA,cA,'Avg Efficiency',avgEff.toFixed(1)+'%',avgEff>=85?'On Target':'Below Target')+
+    kpiHTML(IC.route,bT,cT,'Avg Stores/Load',avgStores.toFixed(1),'route consolidation')+
+    kpiHTML(IC.weight,bB,cB,'Avg Bin Weight',avgWt.toFixed(0)+' lbs','300-450 range')+
+    kpiHTML(IC.shield,bG,cG,'Contamination Rate',contamRate.toFixed(1)+'%',contamRate<5?'Excellent':'Needs Attention')+
+    kpiHTML(IC.truck,bT,cT,'Total Loads',loads.length,'in period')+
+    kpiHTML(IC.check,bG,cG,'Loads >85% Eff.',loadsAbove,'of '+loads.length)+
+    kpiHTML(IC.alert,bR,cR,'Loads <60% Eff.',loadsBelow,'underutilized');
+
+  // Efficiency scores
+  kill('effScores');
+  var colors=loads.map(function(l){return l.eff>=85?C.grn:l.eff>=60?C.warn:C.red;});
+  charts['effScores']=new Chart(document.getElementById('chEffScores'),{
+    type:'bar',data:{labels:loads.map(function(l){return'#'+l.load;}),datasets:[{label:'Efficiency %',data:loads.map(function(l){return l.eff;}),backgroundColor:colors.map(function(c){return c+'88';}),borderColor:colors,borderWidth:1.5,borderRadius:5,datalabels:dlSmart(loads.length)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:110,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Bins distribution
+  kill('binsDist');
+  var binBuckets=[0,0,0,0,0,0,0,0];var binLabels=['70-79','80-89','90-99','100-109','110-119','120-129','130-139','140+'];
+  loads.forEach(function(l){var i=Math.min(7,Math.max(0,Math.floor((l.bins-70)/10)));if(l.bins<70)i=0;binBuckets[i]++;});
+  charts['binsDist']=new Chart(document.getElementById('chBinsDist'),{
+    type:'bar',data:{labels:binLabels,datasets:[{label:'Loads',data:binBuckets,backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.coral);g.addColorStop(1,C.peach);return g;},borderColor:C.coral,borderWidth:0,borderRadius:6,datalabels:dlBar(C.coral)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Load frequency by store
+  var st=aggStores(filtered).sort(function(a,b){return b.loadCount-a.loadCount;}).slice(0,20);
+  kill('freqStore');
+  charts['freqStore']=new Chart(document.getElementById('chFreqStore'),{
+    type:'bar',data:{labels:st.map(function(s){return'#'+s.store;}),datasets:[{label:'Loads',data:st.map(function(s){return s.loadCount;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,320,0);g.addColorStop(0,C.p1A);g.addColorStop(1,C.p2);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlBarH(C.p1)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // Avg weight per bin by store
+  var st2=aggStores(filtered).sort(function(a,b){return b.avgBin-a.avgBin;}).slice(0,20);
+  kill('avgBinStore');
+  charts['avgBinStore']=new Chart(document.getElementById('chAvgBinStore'),{
+    type:'bar',data:{labels:st2.map(function(s){return'#'+s.store;}),datasets:[{label:'Avg lbs/bin',data:st2.map(function(s){return s.avgBin;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,320,0);g.addColorStop(0,C.amberA);g.addColorStop(1,C.amber);return g;},borderColor:C.amber,borderWidth:0,borderRadius:5,datalabels:dlBarH(C.amber)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // Load table
+  document.getElementById('loadTH').innerHTML='<tr><th>Load #</th><th>Date</th><th>Bins</th><th>Stores</th><th>Weight (lbs)</th><th>Tons</th><th>Efficiency</th><th>Contaminated</th></tr>';
+  document.getElementById('loadTB').innerHTML=loads.map(function(l){
+    var ec=l.eff>=85?'tag-g':l.eff>=60?'tag-y':'tag-r';
+    var pct=Math.min(100,l.eff);
+    var color=l.eff>=85?'#27AE60':l.eff>=60?'#E8A94D':'#D64545';
+    return '<tr><td><b>#'+l.load+'</b></td><td>'+l.date.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</td><td>'+l.bins+'</td><td>'+l.storeCount+'</td><td>'+l.weight.toLocaleString()+'</td><td>'+l.tons.toFixed(1)+'</td><td style="min-width:200px"><div class="eff-bar"><div class="eff-fill" style="width:'+pct+'%;background:'+color+';box-shadow:0 1px 4px '+color+'44"></div></div><span class="tag '+ec+'">'+l.eff.toFixed(0)+'%</span></td><td>'+(l.contam||0)+'</td></tr>';
+  }).join('');
+
+  // === FREIGHT COST ANALYSIS ===
+  var RATE=600; // $/load
+  var TARGET_EFF=0.95;
+  var OPT_BINS=Math.floor(MAX_BINS*TARGET_EFF); // 136
+
+  var totalBinsAll=loads.reduce(function(s,l){return s+l.bins;},0);
+  var currentLoads=loads.length;
+  var currentCost=currentLoads*RATE;
+  var optLoads=Math.ceil(totalBinsAll/OPT_BINS);
+  var optCost=optLoads*RATE;
+  var totalSavings=currentCost-optCost;
+  var avgSavingsPerLoad=currentLoads>0?totalSavings/currentLoads:0;
+  var trucksEliminated=currentLoads-optLoads;
+
+  // Annualize
+  var daySpanOps=1;
+  if(filtered.length>1)daySpanOps=Math.max(1,Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000));
+  var annSavings=totalSavings/daySpanOps*365;
+
+  // Freight KPIs
+  var bB='rgba(43,91,138,.1)',cB2='#2B5B8A';
+  var bG2='rgba(46,158,107,.1)',cG2='#2E9E6B';
+  var bR2='rgba(214,69,69,.1)',cR2='#D64545';
+  var bA2='rgba(232,169,77,.1)',cA2='#D4880F';
+  document.getElementById('freightKpis').innerHTML=
+    kpiHTML(IC.truck,bB,cB2,'Current Freight Cost','$'+fmt(currentCost),currentLoads+' loads × $600')+
+    kpiHTML(IC.check,bG2,cG2,'Optimized Cost (95%)','$'+fmt(optCost),optLoads+' loads needed')+
+    kpiHTML(IC.trend,bG2,cG2,'Total Savings','$'+fmt(totalSavings),trucksEliminated+' fewer trucks')+
+    kpiHTML(IC.scale,bA2,cA2,'Avg Excess Cost/Load','$'+avgSavingsPerLoad.toFixed(0),'per current load')+
+    kpiHTML(IC.calendar,bG2,cG2,'Annualized Savings','$'+fmt(annSavings),'projected 12-month')+
+    kpiHTML(IC.alert,bR2,cR2,'Wasted Capacity Cost','$'+fmt(totalSavings),((1-totalBinsAll/(currentLoads*OPT_BINS))*100).toFixed(0)+'% of spend recoverable');
+
+  // Excess cost per load chart
+  kill('freightExcess');
+  var excessData=loads.map(function(l){
+    var emptySlots=OPT_BINS-l.bins;
+    if(emptySlots<0)emptySlots=0;
+    return{load:l.load,excess:(emptySlots/OPT_BINS)*RATE,eff:l.eff};
+  });
+  charts['freightExcess']=new Chart(document.getElementById('chFreightExcess'),{
+    type:'bar',data:{
+      labels:excessData.map(function(d){return'#'+d.load;}),
+      datasets:[{
+        label:'Excess Cost ($)',
+        data:excessData.map(function(d){return d.excess;}),
+        backgroundColor:excessData.map(function(d){
+          return d.excess>200?'rgba(214,69,69,.65)':d.excess>100?'rgba(232,169,77,.65)':'rgba(46,158,107,.5)';
+        }),
+        borderColor:excessData.map(function(d){
+          return d.excess>200?C.red:d.excess>100?C.amber:C.grn;
+        }),
+        borderWidth:1.5,
+        borderRadius:5,
+        datalabels:{
+          display:excessData.length<=20,
+          anchor:'end',align:'end',
+          color:function(ctx){var v=excessData[ctx.dataIndex].excess;return v>200?C.red:v>100?'#D4880F':C.grn;},
+          font:{size:9,weight:700},
+          formatter:function(v){return'$'+Math.round(v);}
+        }
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'},ticks:{callback:function(v){return'$'+v;}}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // Current vs Optimized comparison
+  kill('freightCompare');
+  charts['freightCompare']=new Chart(document.getElementById('chFreightCompare'),{
+    type:'bar',data:{
+      labels:['Truck Count','Total Cost ($)','Avg Bins/Truck'],
+      datasets:[
+        {
+          label:'Current',
+          data:[currentLoads,currentCost,totalBinsAll/Math.max(1,currentLoads)],
+          backgroundColor:'rgba(214,69,69,.55)',
+          borderColor:C.red,
+          borderWidth:1.5,
+          borderRadius:6,
+          datalabels:{display:true,anchor:'end',align:'end',color:C.red,font:{size:10,weight:700},formatter:function(v,ctx){return ctx.dataIndex===1?'$'+fmt(v):Math.round(v);}}
+        },
+        {
+          label:'Optimized (95%)',
+          data:[optLoads,optCost,OPT_BINS],
+          backgroundColor:'rgba(46,158,107,.55)',
+          borderColor:C.grn,
+          borderWidth:1.5,
+          borderRadius:6,
+          datalabels:{display:true,anchor:'end',align:'end',color:C.grn,font:{size:10,weight:700},formatter:function(v,ctx){return ctx.dataIndex===1?'$'+fmt(v):Math.round(v);}}
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{intersect:false,mode:'index'},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+function renderStores(){
+  var st=aggStores(filtered);
+  var maxW=st.length>0?st[0].weight:1;
+
+  // Weight ranking
+  document.getElementById('rankWeight').innerHTML=st.map(function(s,i){
+    var pct=(s.weight/maxW*100).toFixed(0);
+    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">Store #'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+fmt(s.weight)+' lbs</div></div>';
+  }).join('');
+
+  // CO2 ranking
+  var stCO2=st.slice().sort(function(a,b){return calc(b.tons).ghg-calc(a.tons).ghg;});
+  var maxCO2=stCO2.length>0?calc(stCO2[0].tons).ghg:1;
+  document.getElementById('rankCO2').innerHTML=stCO2.map(function(s,i){
+    var ghg=calc(s.tons).ghg;var pct=(ghg/maxCO2*100).toFixed(0);
+    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">Store #'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+ghg.toFixed(2)+' t</div></div>';
+  }).join('');
+
+  // Store summary table
+  document.getElementById('storeTH').innerHTML='<tr><th>Rank</th><th>Store</th><th>Bins</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>Avg Bin (lbs)</th><th>GHG (tCO₂e)</th><th>Households</th><th>Load Freq</th></tr>';
+  document.getElementById('storeTB').innerHTML=st.map(function(s,i){
+    var sus=calc(s.tons);
+    return '<tr><td><b>'+(i+1)+'</b></td><td>Store #'+s.store+'</td><td>'+s.bins+'</td><td>'+s.loadCount+'</td><td>'+s.weight.toLocaleString()+'</td><td>'+s.tons.toFixed(1)+'</td><td>'+s.avgBin.toFixed(0)+'</td><td>'+sus.ghg.toFixed(2)+'</td><td>'+sus.hh.toFixed(2)+'</td><td>'+s.loadCount+'</td></tr>';
+  }).join('');
+
+  // Tons per store per month heatmap-style
+  var months=aggMonths(filtered);
+  var top15=st.slice(0,15);
+  kill('storeMo');
+  var datasets=top15.map(function(store,idx){
+    var pal=[C.p1,C.lt,C.coral,C.sage,C.amber,C.teal,C.p3,C.bark,'#7B68AE','#E88D6D','#6DBFA8','#B85C78','#8FA85C','#5C8FB8','#B8A85C'];
+    return{
+      label:'#'+store.store,
+      data:months.map(function(mo){
+        var w=0;filtered.forEach(function(r){
+          var k=r.date.getFullYear()+'-'+String(r.date.getMonth()).padStart(2,'0');
+          if(k===mo.key&&r.store===store.store)w+=r.weight;
+        });return w/2000;
+      }),
+      backgroundColor:pal[idx%pal.length]+'66',
+      borderColor:pal[idx%pal.length],
+      borderWidth:1.5,
+      borderRadius:3
+    };
+  });
+  charts['storeMo']=new Chart(document.getElementById('chStoreMo'),{
+    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:9}}},datalabels:{display:false}},scales:{y:{beginAtZero:true,stacked:true,grid:{color:'rgba(48,69,92,.05)'}},x:{stacked:true,grid:{display:false}}}}
+  });
+
+  // Projected annualized
+  var daySpan=1;
+  if(filtered.length>1)daySpan=Math.max(1,Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000));
+  var proj=top15.map(function(s){return{store:s.store,ann:s.tons/daySpan*365};}).sort(function(a,b){return b.ann-a.ann;});
+  kill('storeProj');
+  charts['storeProj']=new Chart(document.getElementById('chStoreProj'),{
+    type:'bar',data:{labels:proj.map(function(p){return'#'+p.store;}),datasets:[{label:'Projected Annual Tons',data:proj.map(function(p){return p.ann;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,400,0);g.addColorStop(0,C.sageA);g.addColorStop(1,C.sage);return g;},borderColor:C.sage,borderWidth:0,borderRadius:5,datalabels:dlBarH(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+}
+
+// INTAKE LOG
+function renderIntake(){
+  document.getElementById('intakeCount').textContent=filtered.length+' records';
+  var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
+  document.getElementById('intakeSub').textContent=pl[curP]+' — '+filtered.length+' of '+raw.length+' total';
+  document.getElementById('intakeTH').innerHTML='<tr><th>Date</th><th>Load #</th><th>Account</th><th>Store #</th><th>Weight (lbs)</th><th>Contamination</th></tr>';
+  // Show max 2000 rows for performance
+  var show=filtered.slice(0,2000);
+  document.getElementById('intakeTB').innerHTML=show.map(function(r){
+    return '<tr><td>'+r.date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</td><td>#'+r.load+'</td><td>'+r.acct+'</td><td>'+r.store+'</td><td>'+r.weight.toLocaleString()+'</td><td>'+(r.contam?'<span class="tag tag-r">Yes</span>':'<span class="tag tag-g">No</span>')+'</td></tr>';
+  }).join('');
+  if(filtered.length>2000){
+    document.getElementById('intakeTB').innerHTML+='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Showing 2,000 of '+filtered.length+' rows. Export CSV for full data.</td></tr>';
+  }
+}
+
+function exportCSV(){
+  if(!filtered.length){alert('No data.');return;}
+  var csv=['Date,Load,Account,Store,Weight,Contamination'];
+  filtered.forEach(function(r){csv.push(r.date.toISOString().split('T')[0]+','+r.load+',"'+r.acct+'",'+r.store+','+r.weight+','+r.contam);});
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv.join('\n')],{type:'text/csv'}));
+  a.download='Denali_Target_Report_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+}
+
+// ================================================================
+// PDF REPORT GENERATOR — v2 with charts, AI analysis, visual design
+// ================================================================
+function generatePDF(){
+  if(!filtered.length){alert('No data loaded.');return;}
+  document.getElementById('dlReport').textContent='Generating...';
+  document.getElementById('dlReport').style.pointerEvents='none';
+
+  // Gather AI analysis first, then build PDF
+  gatherAIAnalysis().then(function(ai){
+    try{ buildPDF(ai); }
+    catch(err){ console.error('PDF error:',err); alert('Error generating PDF: '+err.message); }
+    document.getElementById('dlReport').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Download Report';
+    document.getElementById('dlReport').style.pointerEvents='auto';
+  });
+}
+
+function gatherAIAnalysis(){
+  // Smart template analysis engine — no API calls, instant generation
+  var totalW=0;filtered.forEach(function(r){totalW+=r.weight;});
+  var tons=totalW/2000;var s=calc(tons);
+  var loads=aggLoads(filtered);var stores=aggStores(filtered);var weeks=aggWeeks(filtered);
+  var avgEff=loads.length>0?loads.reduce(function(a,l){return a+l.eff;},0)/loads.length:0;
+  var avgBinsLoad=loads.length>0?loads.reduce(function(a,l){return a+l.bins;},0)/loads.length:0;
+  var wkTons=weeks.map(function(w){return w.tons;});
+  var avgTonsWk=wkTons.length>0?wkTons.reduce(function(a,b){return a+b;},0)/wkTons.length:0;
+  var RATE=600,OPT_BINS=Math.floor(MAX_BINS*0.95);
+  var totalBins=loads.reduce(function(a,l){return a+l.bins;},0);
+  var optLoads=Math.ceil(totalBins/OPT_BINS);
+  var freightSavings=(loads.length-optLoads)*RATE;
+  var annSavings=freightSavings/Math.max(1,filtered.length>1?Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000):1)*365;
+  var daySpan=Math.max(1,filtered.length>1?Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000):1);
+  var annTons=tons/daySpan*365;
+
+  // Trend analysis
+  var firstHalf=wkTons.slice(0,Math.floor(wkTons.length/2));
+  var secondHalf=wkTons.slice(Math.floor(wkTons.length/2));
+  var fhAvg=firstHalf.length>0?firstHalf.reduce(function(a,b){return a+b;},0)/firstHalf.length:0;
+  var shAvg=secondHalf.length>0?secondHalf.reduce(function(a,b){return a+b;},0)/secondHalf.length:0;
+  var trendPct=fhAvg>0?((shAvg-fhAvg)/fhAvg*100):0;
+  var trendDir=trendPct>10?'strong upward':trendPct>0?'positive':trendPct>-10?'relatively stable':'declining';
+
+  // Efficiency analysis
+  var loadsAbove85=loads.filter(function(l){return l.eff>=85;}).length;
+  var loadsBelow60=loads.filter(function(l){return l.eff<60;}).length;
+  var effRating=avgEff>=90?'excellent':avgEff>=80?'solid':avgEff>=70?'moderate':'below expectations';
+  var bestLoad=loads.reduce(function(b,l){return l.eff>b.eff?l:b;},loads[0]);
+  var worstLoad=loads.reduce(function(w,l){return l.eff<w.eff?l:w;},loads[0]);
+
+  // Store analysis
+  var top3=stores.slice(0,3);
+  var bot3=stores.slice(-3).reverse();
+  var topStoreStr=top3.map(function(st){return'Store #'+st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
+  var contamRate=(filtered.filter(function(r){return r.contam;}).length/filtered.length*100);
+
+  // Date formatting
+  var d1=filtered[0].date;var d2=filtered[filtered.length-1].date;
+  var dateRange=d1.toLocaleDateString('en-US',{month:'long',day:'numeric'})+' through '+d2.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  // ---- EXECUTIVE SUMMARY ----
+  var exec='During the reporting period of '+dateRange+', the Target Midwest organics collection program processed a total of '+fmt(totalW)+' pounds ('+tons.toFixed(1)+' tons) of organic material through '+loads.length+' consolidated truckloads originating from '+stores.length+' active Target store locations. '+
+    'Weekly collection volume demonstrated a '+trendDir+' trajectory, increasing from an average of '+fhAvg.toFixed(1)+' tons per week in the first half of the period to '+shAvg.toFixed(1)+' tons per week in the second half';
+  if(trendPct>0)exec+=', representing a '+trendPct.toFixed(0)+'% improvement in throughput';
+  exec+='. ';
+  exec+='All collected organics were transported to the VIRESCO anaerobic digestion facility in Turtle Lake, Wisconsin, where processing yielded '+fmt(s.ghg,1)+' tCO2e in verified greenhouse gas avoidance and '+fmt(s.energy)+' kWh of renewable energy generation. ';
+  exec+='At the current collection rate, the program is projected to divert approximately '+fmt(annTons,0)+' tons annually, establishing a significant and scalable organics diversion channel for the Denali-Target partnership across the Midwest corridor.';
+
+  // ---- SUSTAINABILITY HIGHLIGHTS ----
+  var sust='The environmental impact of the program is substantial and measurable. Diverting '+tons.toFixed(1)+' tons of organic waste from landfill through anaerobic digestion avoided an estimated '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions';
+  sust+=', an impact comparable to removing '+fmt(s.cars,1)+' passenger vehicles from the road for a full year or planting '+fmt(s.trees,0)+' mature trees. ';
+  sust+='The digestion process generated '+fmt(s.biogas)+' cubic meters of methane-rich biogas, which was converted into '+fmt(s.energy)+' kWh of clean electricity — enough to power approximately '+s.hh.toFixed(1)+' average American households. ';
+  sust+='Additionally, the process captured '+fmt(s.carbonLbs)+' pounds of organic carbon (at 150,000 ppm concentration) and produced '+fmt(s.npk)+' kg of NPK-rich digestate suitable for agricultural fertilizer replacement, closing the nutrient loop and reducing dependency on synthetic fertilizer inputs. ';
+  sust+='These metrics position the program as a high-impact sustainability initiative that directly supports both Target\'s corporate ESG commitments and Denali\'s mission to replenish the earth through organic waste repurposing.';
+
+  // ---- OPERATIONAL ANALYSIS ----
+  var ops='Across '+loads.length+' loads during the period, average truck utilization reached '+avgEff.toFixed(1)+'% of the 143-bin maximum capacity ('+avgBinsLoad.toFixed(0)+' bins per load), which is '+effRating+' relative to the 95% optimization target. ';
+  ops+=loadsAbove85+' of '+loads.length+' loads ('+((loadsAbove85/loads.length)*100).toFixed(0)+'%) achieved the 85% efficiency threshold';
+  if(loadsBelow60>0)ops+=', while '+loadsBelow60+' load'+(loadsBelow60>1?'s':'')+' fell below 60% utilization, indicating opportunities for route consolidation';
+  ops+='. ';
+  ops+='The highest-performing load was #'+bestLoad.load+' at '+bestLoad.eff.toFixed(0)+'% efficiency ('+bestLoad.bins+' bins), while Load #'+worstLoad.load+' represented the lowest utilization at '+worstLoad.eff.toFixed(0)+'% ('+worstLoad.bins+' bins). ';
+  if(contamRate<1)ops+='Waste stream quality was exceptional, with a contamination rate of '+contamRate.toFixed(1)+'% across all '+filtered.length+' bins scanned — well within acceptable thresholds for AD processing. ';
+  else if(contamRate<5)ops+='The contamination rate of '+contamRate.toFixed(1)+'% across '+filtered.length+' scanned bins remains within acceptable parameters, though continued monitoring is recommended to maintain feedstock quality standards. ';
+  else ops+='The contamination rate of '+contamRate.toFixed(1)+'% warrants attention and may benefit from targeted training at high-contamination store locations to protect AD processing efficiency. ';
+  ops+='The top-contributing locations — '+topStoreStr+' — collectively accounted for a disproportionate share of total volume, suggesting these stores could serve as models for optimizing collection practices across the network.';
+
+  // ---- FREIGHT & RECOMMENDATIONS ----
+  var freight='At the standard route rate of $600 per load from the consolidation warehouse to Turtle Lake, the program incurred $'+fmt(loads.length*RATE)+' in total freight costs across '+loads.length+' loads. ';
+  freight+='Analysis indicates that achieving the 95% efficiency target ('+OPT_BINS+' bins per truck) would reduce the required truck count from '+loads.length+' to '+optLoads+', eliminating '+(loads.length-optLoads)+' loads and yielding a savings of $'+fmt(freightSavings)+' — or an annualized savings opportunity of approximately $'+fmt(annSavings)+'. ';
+  freight+='To capture this opportunity, three operational improvements are recommended: (1) Implement bin pre-staging protocols at the consolidation warehouse to maximize each truck\'s bin count before dispatch, targeting a minimum of '+OPT_BINS+' bins per departure. ';
+  freight+='(2) Coordinate collection schedules with store volume patterns to batch higher-volume stores onto fewer, fuller trucks rather than distributing bins evenly across loads. ';
+  freight+='(3) Establish a weekly load efficiency scorecard visible to warehouse operations staff, setting a rolling target of '+OPT_BINS+'+ bins per truck and flagging any load dispatched below 100 bins for review. ';
+  freight+='These measures, combined with the natural volume ramp as the program matures, should enable the partnership to close the current '+((95-avgEff).toFixed(0))+'-point efficiency gap within the next two quarters, translating directly to measurable freight cost reduction.';
+
+  return Promise.resolve({exec:exec,sust:sust,ops:ops,freight:freight});
+}
+
+function buildPDF(ai){
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210,H=297,ML=18,MR=18,PW=W-ML-MR;
+
+  // Colors
+  var dnDark=[48,69,92],dnLight=[104,188,212],dnDeep=[30,45,61];
+  var white=[255,255,255],bg=[243,245,247],txtM=[138,151,164];
+  var green=[46,158,107],red=[214,69,69],amber=[212,136,15];
+
+  // Data
+  var totalW=0;filtered.forEach(function(r){totalW+=r.weight;});
+  var tons=totalW/2000;var sus=calc(tons);
+  var loads=aggLoads(filtered);var stores=aggStores(filtered);
+  var weeks=aggWeeks(filtered);var months=aggMonths(filtered);
+  var avgEff=loads.length>0?loads.reduce(function(a,l){return a+l.eff;},0)/loads.length:0;
+  var avgBinsLoad=loads.length>0?loads.reduce(function(a,l){return a+l.bins;},0)/loads.length:0;
+  var wkTons=weeks.map(function(w){return w.tons;});
+  var avgTonsWk=wkTons.length>0?wkTons.reduce(function(a,b){return a+b;},0)/wkTons.length:0;
+  var lowWk=wkTons.length>0?Math.min.apply(null,wkTons):0;
+  var highWk=wkTons.length>0?Math.max.apply(null,wkTons):0;
+  var daySpan=Math.max(1,filtered.length>1?Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000):1);
+  var annTons=tons/daySpan*365;
+  var RATE=600,OPT_BINS=Math.floor(MAX_BINS*0.95);
+  var totalBinsAll=loads.reduce(function(a,l){return a+l.bins;},0);
+  var optLoads=Math.ceil(totalBinsAll/OPT_BINS);
+  var freightSavings=(loads.length-optLoads)*RATE;
+  var annSavings=freightSavings/daySpan*365;
+  var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
+  var periodStr=pl[curP]||'All Time';
+  var d1=filtered[0].date,d2=filtered[filtered.length-1].date;
+  var dateRange=d1.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+d2.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  // Chart image captures — must show all pages temporarily to render canvases
+  var chartImgs={};
+  var pages=document.querySelectorAll('.page');
+  var activePage=document.querySelector('.page.active');
+  // Show all pages temporarily
+  pages.forEach(function(p){p.style.display='block';p.classList.add('active');});
+  // Force a reflow so canvases render
+  document.body.offsetHeight;
+  // Small delay to let charts render, then capture
+  var chartIds=['chMonthTons','chMonthSus','chWeekly','chEffTrend','chEffScores','chGHG','chBioEnergy','chFreightExcess','chFreightCompare','chGHGStore','chCarbon'];
+  chartIds.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el.width>0&&el.height>0){
+      try{
+        var dataUrl=el.toDataURL('image/png',0.9);
+        if(dataUrl&&dataUrl.length>100)chartImgs[id]=dataUrl;
+      }catch(e){console.warn('Chart capture failed:',id,e);}
+    }
+  });
+  // Restore page visibility
+  pages.forEach(function(p){p.classList.remove('active');p.style.display='';});
+  if(activePage)activePage.classList.add('active');
+
+  // ---- HELPERS ----
+  function setF(s,sz){doc.setFont('helvetica',s==='b'?'bold':s==='i'?'italic':'normal');doc.setFontSize(sz);}
+  function rgb(c){doc.setTextColor(c[0],c[1],c[2]);}
+  function fill(c){doc.setFillColor(c[0],c[1],c[2]);}
+
+  function header(pg,total){
+    fill(dnDeep);doc.rect(0,0,W,16,'F');
+    rgb(dnLight);setF('b',12);doc.text('DENALI',ML,10.5);
+    rgb(white);setF('n',7);doc.text('Target Midwest Organics Program',ML+28,10.5);
+    rgb(txtM);setF('n',7);doc.text('Page '+pg+' of '+total,W-MR,10.5,{align:'right'});
+  }
+  function footer(){
+    doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);
+    rgb(txtM);setF('n',6.5);
+    doc.text('DENALI  |  Target Midwest Organics  |  Confidential  |  Prepared by VIRESCO AD LLC',W/2,H-9,{align:'center'});
+    doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});
+  }
+  function secBar(y,title,sub){
+    fill(dnDark);doc.rect(ML,y,PW,9,'F');
+    // Accent stripe
+    fill(dnLight);doc.rect(ML,y,3,9,'F');
+    rgb(white);setF('b',9.5);doc.text(title.toUpperCase(),ML+7,y+6.2);
+    if(sub){setF('n',6.5);doc.text(sub,W-MR-2,y+6.2,{align:'right'});}
+    return y+13;
+  }
+  function kpiBox(x,y,w,label,value,sub,accent){
+    fill(bg);doc.roundedRect(x,y,w,22,1.5,1.5,'F');
+    var ac=accent||dnLight;
+    fill(ac);doc.rect(x,y,w,2,'F');
+    rgb(ac);setF('b',6);doc.text(label.toUpperCase(),x+4,y+9);
+    rgb(dnDeep);setF('b',13);doc.text(String(value),x+4,y+16.5);
+    rgb(txtM);setF('n',6);doc.text(String(sub),x+4,y+20.5);
+  }
+  function tblRow(y,cols,widths,isHdr,isBg){
+    var x=ML;var h=isHdr?8:7;
+    if(isHdr){fill(dnDark);doc.rect(ML,y,PW,h,'F');rgb(white);setF('b',6.5);}
+    else{if(isBg){fill([248,249,251]);doc.rect(ML,y,PW,h,'F');}rgb(dnDeep);setF('n',7);}
+    for(var i=0;i<cols.length;i++){
+      var a=i===0?'left':'right';
+      doc.text(String(cols[i]),a==='left'?x+3:x+widths[i]-3,y+(isHdr?5.5:5),{align:a});
+      x+=widths[i];
+    }
+    return y+h;
+  }
+  // Wrap text helper
+  function wrapText(text,maxW,size){
+    setF('n',size);
+    return doc.splitTextToSize(text,maxW);
+  }
+  // Draw callout box with colored left border
+  function calloutBox(y,text,accent,width){
+    var lines=wrapText(text,width||PW-8,8);
+    var bh=lines.length*4.5+6;
+    fill([248,250,252]);doc.roundedRect(ML,y,PW,bh,1.5,1.5,'F');
+    fill(accent||green);doc.rect(ML,y,2.5,bh,'F');
+    rgb(dnDeep);setF('n',8);
+    doc.text(lines,ML+7,y+5.5);
+    return y+bh+4;
+  }
+  // Add chart image
+  function addChart(y,chartId,h,caption){
+    if(chartImgs[chartId]){
+      try{
+        doc.addImage(chartImgs[chartId],'PNG',ML,y,PW,h);
+        y+=h+2;
+      }catch(e){console.warn('addImage failed for',chartId,e);}
+    }
+    if(caption){rgb(txtM);setF('i',6);doc.text(caption,ML,y);y+=5;}
+    return y;
+  }
+
+  var TP=6; // total pages
+
+  // ================================================================
+  // PAGE 1 - COVER
+  // ================================================================
+  fill(dnDeep);doc.rect(0,0,W,H,'F');
+
+  // Mountain shapes
+  fill(dnDark);
+  doc.triangle(W/2,H*0.28,W*0.12,H*0.68,W*0.88,H*0.68,'F');
+  fill([38,56,72]);
+  doc.triangle(W*0.35,H*0.38,W*0.05,H*0.68,W*0.55,H*0.68,'F');
+  fill([52,78,100]);
+  doc.triangle(W*0.7,H*0.35,W*0.5,H*0.68,W*0.95,H*0.68,'F');
+
+  // Accent line
+  fill(dnLight);doc.rect(0,H*0.68,W,1.5,'F');
+
+  // Logo area
+  rgb(dnLight);setF('b',42);doc.text('DENALI',W/2,75,{align:'center'});
+
+  // Divider
+  doc.setDrawColor(dnLight[0],dnLight[1],dnLight[2]);doc.setLineWidth(0.4);
+  doc.line(W/2-35,83,W/2+35,83);
+
+  rgb(white);setF('n',13);doc.text('Target Midwest Organics Program',W/2,96,{align:'center'});
+  setF('b',18);doc.text('Intake Report Summary',W/2,110,{align:'center'});
+
+  rgb(dnLight);setF('n',11);doc.text(periodStr,W/2,126,{align:'center'});
+  setF('n',10);doc.text(dateRange,W/2,134,{align:'center'});
+
+  // Bottom info box
+  fill([38,56,72]);doc.roundedRect(W/2-50,H-55,100,30,2,2,'F');
+  rgb([180,200,210]);setF('n',8);
+  doc.text('Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-44,{align:'center'});
+  doc.text('Prepared by VIRESCO AD LLC',W/2,H-37,{align:'center'});
+  rgb(txtM);setF('i',7);
+  doc.text('Confidential - For Authorized Recipients Only',W/2,H-30,{align:'center'});
+
+  // ================================================================
+  // PAGE 2 - EXECUTIVE SUMMARY
+  // ================================================================
+  doc.addPage();header(2,TP);footer();
+  var y=22;
+
+  y=secBar(y,'Executive Summary',periodStr);
+
+  // KPIs - 3x2 grid
+  var kw=(PW-8)/3;
+  kpiBox(ML,y,kw,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
+  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(sus.ghg,1),'tCO2e',green);
+  kpiBox(ML+2*(kw+4),y,kw,'Active Stores',stores.length,'of 45 locations',dnLight);
+  y+=26;
+  kpiBox(ML,y,kw,'Avg Load Efficiency',avgEff.toFixed(0)+'%','143 max bins/truck',amber);
+  kpiBox(ML+kw+4,y,kw,'Avg Tons / Week',fmt(avgTonsWk,1),'Low: '+fmt(lowWk,1)+' | High: '+fmt(highWk,1),dnDark);
+  kpiBox(ML+2*(kw+4),y,kw,'Annualized Projection',fmt(annTons,0)+' tons','12-month extrapolation',dnLight);
+  y+=30;
+
+  // Executive Summary Analysis
+  y=calloutBox(y,ai.exec,dnDark);
+
+  // Monthly tonnage chart
+  y+=2;
+  y=addChart(y,'chMonthTons',55,'Tonnage by Month - Loads (orange) and Tons (blue)');
+
+  // ================================================================
+  // PAGE 3 - SUSTAINABILITY
+  // ================================================================
+  doc.addPage();header(3,TP);footer();
+  y=22;
+
+  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 60% Digestor Efficiency');
+
+  // Sustainability table
+  var sRows=[
+    ['Total Tons of Organics',tons.toFixed(1),'Tons'],
+    ['Lbs of Carbon (150K ppm)',fmt(sus.carbonLbs),'lbs'],
+    ['GHG Avoided',sus.ghg.toFixed(1),'tCO2e'],
+    ['Biogas Yield from AD',fmt(sus.biogas),'m3 CH4'],
+    ['Energy Generated',fmt(sus.energy),'kWh'],
+    ['Fertilizer Replacement (NPK)',fmt(sus.npk),'kg'],
+    ['Households Powered',sus.hh.toFixed(1),'households'],
+    ['Cars Off Road Equivalent',sus.cars.toFixed(1),'cars/yr'],
+    ['Trees Planted Equivalent',fmt(sus.trees),'trees/yr'],
+    ['Miles Not Driven',fmt(sus.miles),'miles']
+  ];
+  var sw=[80,40,PW-80-40];
+  y=tblRow(y,['Metric','Value','Units'],sw,true,false);
+  sRows.forEach(function(r,i){y=tblRow(y,r,sw,false,i%2===0);});
+  y+=4;
+
+  // Equivalents highlight boxes
+  var eqPairs=[
+    {v:fmt(sus.cars,1)+' cars/yr',l:'OFF THE ROAD',c:dnDark},
+    {v:fmt(sus.trees,0)+' trees/yr',l:'EQUIVALENT PLANTED',c:green},
+    {v:fmt(sus.hh,1)+' homes',l:'POWERED',c:dnLight},
+    {v:fmt(sus.miles,0)+' miles',l:'NOT DRIVEN',c:amber}
+  ];
+  var eqW=(PW-6)/2;
+  eqPairs.forEach(function(eq,i){
+    var ex=ML+(i%2)*(eqW+6);
+    var ey=y+Math.floor(i/2)*18;
+    fill(bg);doc.roundedRect(ex,ey,eqW,14,1.5,1.5,'F');
+    fill(eq.c);doc.rect(ex,ey,2.5,14,'F');
+    rgb(dnDeep);setF('b',10);doc.text(eq.v,ex+7,ey+6.5);
+    rgb(txtM);setF('b',6);doc.text(eq.l,ex+7,ey+11);
+  });
+  y+=42;
+
+  // AI sustainability highlights
+  // Sustainability Analysis
+  y=calloutBox(y,ai.sust,green);
+
+  // GHG chart
+  y=addChart(y,'chGHG',45,'GHG Avoided by Month (tCO2e)');
+
+  // ================================================================
+  // PAGE 4 - OPERATIONS
+  // ================================================================
+  doc.addPage();header(4,TP);footer();
+  y=22;
+
+  y=secBar(y,'Operational Performance','Load Efficiency & Capacity');
+
+  var avgStoresL=loads.length>0?loads.reduce(function(a,l){return a+l.storeCount;},0)/loads.length:0;
+  kpiBox(ML,y,kw,'Total Loads',loads.length,'in period',dnDark);
+  kpiBox(ML+kw+4,y,kw,'Avg Bins/Load',avgBinsLoad.toFixed(0),'of 143 capacity',dnLight);
+  kpiBox(ML+2*(kw+4),y,kw,'Avg Efficiency',avgEff.toFixed(1)+'%',avgEff>=85?'On target':'Below 85% target',avgEff>=85?green:amber);
+  y+=28;
+
+  // AI operational recommendations
+  // Operational Analysis
+  y=calloutBox(y,ai.ops,amber);
+
+  // Efficiency chart
+  y=addChart(y,'chEffScores',50,'Load Efficiency Scores - Green >85%, Amber 60-85%, Red <60%');
+
+  // Load table (top 20)
+  y+=2;
+  if(y<H-60){
+    y=secBar(y,'Load Summary','Top loads by date');
+    var lw=[18,24,16,18,28,20,PW-18-24-16-18-28-20];
+    y=tblRow(y,['Load #','Date','Bins','Stores','Weight','Tons','Eff.'],lw,true,false);
+    loads.slice(0,15).forEach(function(l,i){
+      if(y>H-25)return;
+      y=tblRow(y,['#'+l.load,l.date.toLocaleDateString('en-US',{month:'short',day:'numeric'}),l.bins,l.storeCount,l.weight.toLocaleString(),l.tons.toFixed(1),l.eff.toFixed(0)+'%'],lw,false,i%2===0);
+    });
+  }
+
+  // ================================================================
+  // PAGE 5 - STORE RANKINGS
+  // ================================================================
+  doc.addPage();header(5,TP);footer();
+  y=22;
+
+  y=secBar(y,'Store Performance Rankings','By total weight');
+
+  var stW=[12,22,16,16,28,20,26,PW-12-22-16-16-28-20-26];
+  y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);
+  stores.slice(0,30).forEach(function(s,i){
+    if(y>H-25){doc.addPage();header(5,TP);footer();y=22;y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);}
+    var ss=calc(s.tons);
+    y=tblRow(y,[i+1,'Store #'+s.store,s.bins,s.loadCount,s.weight.toLocaleString(),s.tons.toFixed(1),ss.ghg.toFixed(2)],stW,false,i%2===0);
+  });
+
+  // CO2e by store chart if space
+  if(y<H-80){y+=4;y=addChart(y,'chGHGStore',50,'CO2e Avoided by Store');}
+
+  // ================================================================
+  // PAGE 6 - CARBON & FREIGHT
+  // ================================================================
+  doc.addPage();header(6,TP);footer();
+  y=22;
+
+  y=secBar(y,'Carbon Content Analysis','150,000 ppm | 15% of total weight');
+
+  kpiBox(ML,y,(PW-4)/2,'Total Lbs of Carbon',fmt(sus.carbonLbs),'from '+fmt(totalW)+' lbs organics',dnDark);
+  kpiBox(ML+(PW-4)/2+4,y,(PW-4)/2,'Carbon Rate','15%','150,000 ppm assumed',dnLight);
+  y+=26;
+
+  // Top carbon stores
+  var ccW=[12,24,30,30,PW-12-24-30-30];
+  y=tblRow(y,['#','Store','Total lbs','Carbon lbs','% of Total'],ccW,true,false);
+  var totalCarbon=tons*2000*CARBON_PCT;
+  stores.slice(0,10).forEach(function(s,i){
+    var cl=s.weight*CARBON_PCT;
+    y=tblRow(y,[i+1,'Store #'+s.store,s.weight.toLocaleString(),fmt(cl),totalCarbon>0?(cl/totalCarbon*100).toFixed(1)+'%':'0%'],ccW,false,i%2===0);
+  });
+
+  y+=6;
+  y=secBar(y,'Freight Cost Optimization','$600/load | Target 95% efficiency');
+
+  // Freight highlight
+  fill([240,248,240]);doc.roundedRect(ML,y,PW,28,2,2,'F');
+  fill(green);doc.rect(ML,y,3,28,'F');
+
+  rgb(dnDeep);setF('b',20);doc.text('$'+fmt(freightSavings),ML+8,y+12);
+  setF('b',8);doc.text('SAVINGS OPPORTUNITY',ML+8,y+18);
+  rgb(txtM);setF('n',7);doc.text(loads.length+' current loads -> '+optLoads+' optimized ('+(loads.length-optLoads)+' fewer trucks)',ML+8,y+24);
+
+  // Right side stats
+  setF('b',7);rgb(dnDeep);
+  doc.text('Current: $'+fmt(loads.length*RATE),ML+PW/2+10,y+8);
+  doc.text('Optimized: $'+fmt(optLoads*RATE),ML+PW/2+10,y+14);
+  doc.text('Annualized: $'+fmt(annSavings)+' savings',ML+PW/2+10,y+20);
+  y+=34;
+
+  // Freight comparison chart
+  y=addChart(y,'chFreightCompare',45,'Current vs Optimized (95%) Truck Utilization');
+
+  // AI Freight & Recommendations
+  // Freight & Recommendations Analysis
+  if(y<H-40){y+=2;y=calloutBox(y,ai.freight,green);}
+
+  // Footnotes
+  if(y<H-25){
+    rgb(txtM);setF('i',6);
+    doc.text('* Freight rate: $600/load standard route (Consolidation warehouse to Turtle Lake, WI)',ML,y+4);
+    doc.text('* Optimized at 95% capacity = '+OPT_BINS+' bins per truck (143 max)',ML,y+8);
+    doc.text('* Sustainability factors: CARB methodology (0.62 tCO2e/ton), EPA equivalency factors',ML,y+12);
+  }
+
+  // ---- SAVE ----
+  doc.save('Denali_Target_Report_'+new Date().toISOString().split('T')[0]+'.pdf');
+}
+
+// ================================================================
+// LOOSE ORGANICS — Google Sheets Integration
+// ================================================================
+var SHEET_ID='1jKdQP69x2Nq-MWCTQoy3VXiVRTlhC_p3CoMZbdBEKxM';
+var loRaw=[],loFiltered=[],loCharts={},loCurP='all';
+
+function loadLooseData(){
+  document.getElementById('loStatus').textContent='Loading...';
+  var url='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv';
+  
+  fetch(url,{mode:'cors',redirect:'follow'}).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.text();
+  }).then(function(csv){
+    if(csv.length<10)throw new Error('Empty response');
+    parseLooseCSV(csv);
+  }).catch(function(err){
+    console.warn('Primary fetch failed:',err.message,'. Trying export URL...');
+    var url2='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/export?format=csv';
+    fetch(url2,{mode:'cors',redirect:'follow'}).then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.text();
+    }).then(function(csv){
+      if(csv.length<10)throw new Error('Empty response');
+      parseLooseCSV(csv);
+    }).catch(function(e2){
+      console.warn('Export fetch failed:',e2.message,'. Trying JSONP fallback...');
+      // JSONP-style fallback using Google Visualization API
+      var cbName='gsheetCB'+Date.now();
+      var script=document.createElement('script');
+      window[cbName]=function(response){
+        try{
+          var rows=response.table.rows;
+          var cols=response.table.cols;
+          var csvLines=[cols.map(function(c){return'"'+c.label+'"';}).join(',')];
+          rows.forEach(function(row){
+            csvLines.push(row.c.map(function(cell){
+              if(!cell||cell.v===null)return'""';
+              if(cell.v instanceof Date)return'"'+cell.v.toLocaleDateString()+'"';
+              if(typeof cell.f==='string')return'"'+cell.f.replace(/"/g,'""')+'"';
+              return'"'+String(cell.v).replace(/"/g,'""')+'"';
+            }).join(','));
+          });
+          parseLooseCSV(csvLines.join('\n'));
+        }catch(e3){
+          document.getElementById('loStatus').textContent='Error parsing data';
+          console.error('JSONP parse error:',e3);
+        }
+        delete window[cbName];
+        document.head.removeChild(script);
+      };
+      script.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=responseHandler:'+cbName;
+      document.head.appendChild(script);
+    });
+  });
+}
+
+function parseLooseCSV(csv){
+  var lines=csv.split('\n');
+  if(lines.length<2){document.getElementById('loStatus').textContent='No data';return;}
+  // Parse header
+  var headers=parseCSVLine(lines[0]);
+  var dateIdx=-1,timeIdx=-1,custIdx=-1,prodIdx=-1,weightIdx=-1,qtyIdx=-1,unitIdx=-1;
+  headers.forEach(function(h,i){
+    var hl=h.toLowerCase().replace(/['"]/g,'').trim();
+    if(hl.indexOf('date')>=0)dateIdx=i;
+    else if(hl.indexOf('time')>=0)timeIdx=i;
+    else if(hl.indexOf('customer')>=0)custIdx=i;
+    else if(hl.indexOf('product')>=0)prodIdx=i;
+    else if(hl.indexOf('weight')>=0)weightIdx=i;
+    else if(hl.indexOf('quantity')>=0||hl.indexOf('qty')>=0)qtyIdx=i;
+    else if(hl.indexOf('unit')>=0)unitIdx=i;
+  });
+
+  loRaw=[];
+  for(var i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    var cols=parseCSVLine(lines[i]);
+    var cust=cleanVal(cols[custIdx]||'');
+    var units=cleanVal(cols[unitIdx]||'');
+    var custLow=cust.toLowerCase();
+    var unitsLow=units.toLowerCase();
+
+    // Filter: only Denali or Organix customers
+    if(custLow.indexOf('denali')<0&&custLow.indexOf('organix')<0)continue;
+    // Filter: only Truck, Load(s), or Dumpster units
+    if(unitsLow.indexOf('truck')<0&&unitsLow.indexOf('load')<0&&unitsLow.indexOf('dumpster')<0)continue;
+
+    var dateStr=cleanVal(cols[dateIdx]||'');
+    var d=new Date(dateStr);
+    if(isNaN(d))continue;
+
+    var wStr=cleanVal(cols[weightIdx]||'0').replace(/[^0-9.\-]/g,'');
+    var weight=parseFloat(wStr)||0;
+    var qty=parseInt(cleanVal(cols[qtyIdx]||'1'))||1;
+
+    loRaw.push({
+      date:d,
+      customer:cust,
+      product:cleanVal(cols[prodIdx]||''),
+      weight:weight,
+      qty:qty,
+      units:units,
+      tons:weight/2000
+    });
+  }
+  loRaw.sort(function(a,b){return a.date-b.date;});
+
+  document.getElementById('loStatus').textContent=loRaw.length+' loads';
+  document.getElementById('loStatus').className='up-status on';
+  if(loRaw.length>0){
+    document.getElementById('loEmpty').style.display='none';
+    document.getElementById('loDash').style.display='block';
+    populateLoFilters();
+    applyLoFilters();
+  }
+}
+
+function parseCSVLine(line){
+  var result=[];var cur='';var inQuote=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){inQuote=!inQuote;}
+    else if(c===','&&!inQuote){result.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur);
+  return result;
+}
+
+function cleanVal(v){return v.replace(/^["']|["']$/g,'').trim();}
+
+function populateLoFilters(){
+  var custs=[...new Set(loRaw.map(function(r){return r.customer;}))].sort();
+  var prods=[...new Set(loRaw.map(function(r){return r.product;}))].filter(function(p){return p;}).sort();
+  var months=Array.from(new Set(loRaw.map(function(r){return r.date.getMonth();}))).sort(function(a,b){return a-b;});
+  var years=Array.from(new Set(loRaw.map(function(r){return r.date.getFullYear();}))).sort();
+  var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  var cs=document.getElementById('loFCust');cs.innerHTML='<option value="all">All Customers</option>';
+  custs.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);});
+  var ps=document.getElementById('loFProd');ps.innerHTML='<option value="all">All Products</option>';
+  prods.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
+  var ms=document.getElementById('loFMonth');ms.innerHTML='<option value="all">All</option>';
+  months.forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=mn[m];ms.appendChild(o);});
+  var ys=document.getElementById('loFYear');ys.innerHTML='<option value="all">All</option>';
+  years.forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;ys.appendChild(o);});
+
+  ['loFCust','loFProd','loFMonth','loFYear'].forEach(function(id){document.getElementById(id).onchange=applyLoFilters;});
+}
+
+function setLP(btn){
+  btn.parentElement.querySelectorAll('.ptab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');loCurP=btn.getAttribute('data-p');applyLoFilters();
+}
+
+function applyLoFilters(){
+  var cust=document.getElementById('loFCust').value;
+  var prod=document.getElementById('loFProd').value;
+  var month=document.getElementById('loFMonth').value;
+  var year=document.getElementById('loFYear').value;
+  var data=loRaw.slice();
+  if(cust!=='all')data=data.filter(function(r){return r.customer===cust;});
+  if(prod!=='all')data=data.filter(function(r){return r.product===prod;});
+  if(month!=='all')data=data.filter(function(r){return r.date.getMonth()===parseInt(month);});
+  if(year!=='all')data=data.filter(function(r){return r.date.getFullYear()===parseInt(year);});
+  var now=new Date();
+  if(loCurP==='mtd')data=data.filter(function(r){return r.date.getMonth()===now.getMonth()&&r.date.getFullYear()===now.getFullYear();});
+  else if(loCurP==='qtd'){var qs=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);data=data.filter(function(r){return r.date>=qs&&r.date<=now;});}
+  else if(loCurP==='ytd'){var ys=new Date(now.getFullYear(),0,1);data=data.filter(function(r){return r.date>=ys&&r.date<=now;});}
+  loFiltered=data;
+  var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
+  document.getElementById('loPeriodLabel').textContent=pl[loCurP]+' — '+loFiltered.length+' loads';
+  renderLoose();
+}
+
+function loKill(id){if(loCharts[id]){loCharts[id].destroy();delete loCharts[id];}}
+
+// Loose aggregators
+function loAggMonths(data){
+  var g={},mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  data.forEach(function(r){
+    var k=r.date.getFullYear()+'-'+String(r.date.getMonth()).padStart(2,'0');
+    if(!g[k])g[k]={key:k,label:mn[r.date.getMonth()]+' '+r.date.getFullYear(),loads:0,weight:0};
+    g[k].loads++;g[k].weight+=r.weight;
+  });
+  return Object.values(g).map(function(m){m.tons=m.weight/2000;return m;}).sort(function(a,b){return a.key<b.key?-1:1;});
+}
+function loAggCustomers(data){
+  var g={};
+  data.forEach(function(r){
+    if(!g[r.customer])g[r.customer]={customer:r.customer,loads:0,weight:0,products:{}};
+    g[r.customer].loads++;g[r.customer].weight+=r.weight;g[r.customer].products[r.product]=true;
+  });
+  return Object.values(g).map(function(c){c.tons=c.weight/2000;c.productCount=Object.keys(c.products).length;return c;}).sort(function(a,b){return b.weight-a.weight;});
+}
+function loAggWeeks(data){
+  var g={};
+  data.forEach(function(r){
+    var d=new Date(r.date);d.setDate(d.getDate()-d.getDay());
+    var k=d.toISOString().split('T')[0];
+    if(!g[k])g[k]={key:k,loads:0,weight:0};
+    g[k].loads++;g[k].weight+=r.weight;
+  });
+  return Object.values(g).map(function(w){w.tons=w.weight/2000;return w;}).sort(function(a,b){return a.key<b.key?-1:1;});
+}
+
+function renderLoose(){
+  var d=loFiltered,totalW=0;
+  d.forEach(function(r){totalW+=r.weight;});
+  var tons=totalW/2000;var s=calc(tons);
+  var custs=loAggCustomers(d);var months=loAggMonths(d);var weeks=loAggWeeks(d);
+  var wkTons=weeks.map(function(w){return w.tons;});
+  var avgTonsWk=wkTons.length>0?wkTons.reduce(function(a,b){return a+b;},0)/wkTons.length:0;
+
+  // KPIs
+  var bB='rgba(43,91,138,.1)',cB='#2B5B8A',bG='rgba(46,158,107,.1)',cG='#2E9E6B',bT='rgba(58,155,152,.1)',cT='#3A9B98';
+  document.getElementById('loKpiRow').innerHTML=
+    kpiHTML(IC.scale,bB,cB,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW))+
+    kpiHTML(IC.truck,bT,cT,'Total Loads',d.length,'deliveries')+
+    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.pin,bB,cB,'Active Customers',custs.length,'sources')+
+    kpiHTML(IC.trend,bT,cT,'Avg Tons/Week',fmt(avgTonsWk,1),'weekly average')+
+    kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh');
+
+  // Monthly chart
+  loKill('loMo');
+  loCharts['loMo']=new Chart(document.getElementById('loChMonthly'),{
+    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:[
+      {label:'Tons',data:months.map(function(m){return m.tons;}),backgroundColor:C.dkA,borderColor:C.dk,borderWidth:0,borderRadius:6,datalabels:dlBar(C.dk)},
+      {label:'Loads',data:months.map(function(m){return m.loads;}),backgroundColor:C.coralA,borderColor:C.coral,borderWidth:0,borderRadius:6,yAxisID:'y1',datalabels:dlBar(C.coral)}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
+  });
+
+  // Customer chart
+  loKill('loCust');
+  var topCusts=custs.slice(0,10);
+  loCharts['loCust']=new Chart(document.getElementById('loChCust'),{
+    type:'bar',data:{labels:topCusts.map(function(c){return c.customer;}),datasets:[{label:'Tons',data:topCusts.map(function(c){return c.tons;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,300,0);g.addColorStop(0,C.p1A);g.addColorStop(1,C.p2);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlBarH(C.p1)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // Product breakdown
+  loKill('loProd');
+  var prods={};d.forEach(function(r){prods[r.product]=(prods[r.product]||0)+r.weight;});
+  var prodLabels=Object.keys(prods).sort(function(a,b){return prods[b]-prods[a];}).slice(0,8);
+  var prodPal=[C.p1,C.lt,C.coral,C.sage,C.amber,C.teal,C.bark,C.p3];
+  loCharts['loProd']=new Chart(document.getElementById('loChProduct'),{
+    type:'doughnut',data:{labels:prodLabels,datasets:[{data:prodLabels.map(function(p){return prods[p]/2000;}),backgroundColor:prodPal,borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right'},datalabels:{display:true,color:'#fff',font:{size:9,weight:700},formatter:function(v,ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return t>0?(v/t*100).toFixed(0)+'%':'';}}}}
+  });
+
+  // Weekly trend
+  loKill('loWk');
+  loCharts['loWk']=new Chart(document.getElementById('loChWeekly'),{
+    type:'line',data:{labels:weeks.map(function(w){return w.key;}),datasets:[{label:'Tons/Week',data:weeks.map(function(w){return w.tons;}),borderColor:C.p2,backgroundColor:C.p2A,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:C.p2,pointBorderWidth:2,borderWidth:2.5,datalabels:dlSmart(weeks.length,C.p2)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Sustainability KPIs
+  document.getElementById('loSusKpis').innerHTML=
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.atom,bB,cB,'Lbs of Carbon',fmt(s.carbonLbs,0),'at 150K ppm')+
+    kpiHTML(IC.flame,'rgba(232,131,107,.1)','#C85A42','Biogas Yield',fmt(s.biogas,0),'m3 CH4')+
+    kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh')+
+    kpiHTML(IC.plant,bG,cG,'NPK Fertilizer',fmt(s.npk,0),'kg')+
+    kpiHTML(IC.house,bT,cT,'Households Powered',fmt(s.hh,1),'equivalent')+
+    kpiHTML(IC.car,bB,cB,'Cars Off Road',fmt(s.cars,1),'equivalent')+
+    kpiHTML(IC.tree,bG,cG,'Trees Equivalent',fmt(s.trees,0),'planted')+
+    kpiHTML(IC.calendar,bT,cT,'Annualized',fmt(d.length>1?tons/Math.max(1,Math.ceil((d[d.length-1].date-d[0].date)/86400000))*365:0,0)+' tons','projected');
+
+  // Sustainability summary
+  var susRows=[['Total Tons',tons.toFixed(1),'Tons'],['GHG Avoided',s.ghg.toFixed(1),'tCO2e'],['Biogas Yield',fmt(s.biogas),'m3'],['Energy',fmt(s.energy),'kWh'],['NPK',fmt(s.npk),'kg'],['Households',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),''],['Trees',fmt(s.trees),'']];
+  document.getElementById('loSusSummary').innerHTML=susRows.map(function(r){return'<div class="sus-row"><span class="sus-metric">'+r[0]+'</span><span><span class="sus-val">'+r[1]+'</span><span class="sus-unit">'+r[2]+'</span></span></div>';}).join('');
+
+  // GHG by month
+  loKill('loGHG');
+  loCharts['loGHG']=new Chart(document.getElementById('loChGHG'),{
+    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:[{label:'tCO2e',data:months.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Biogas + Energy
+  loKill('loBE');
+  loCharts['loBE']=new Chart(document.getElementById('loChBioEnergy'),{
+    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:[{label:'Biogas (m3)',data:months.map(function(m){return calc(m.tons).biogas;}),backgroundColor:C.p2A,borderColor:C.p2,borderWidth:0,borderRadius:6,datalabels:dlBar(C.p2)},{label:'Energy (kWh)',data:months.map(function(m){return calc(m.tons).energy;}),backgroundColor:C.amberA,borderColor:C.amber,borderWidth:0,borderRadius:6,yAxisID:'y1',datalabels:dlBar(C.amber)}]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
+  });
+
+  // Equivalents
+  loKill('loEq');
+  loCharts['loEq']=new Chart(document.getElementById('loChEquiv'),{
+    type:'bar',data:{labels:['Cars Off Road','Trees Planted','Households'],datasets:[{data:[s.cars,s.trees,s.hh],backgroundColor:[C.p1,C.sage,C.teal],borderWidth:0,borderRadius:8,datalabels:dlBarH(C.dk)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // Customer rankings
+  var maxW=custs.length>0?custs[0].weight:1;
+  document.getElementById('loRankWeight').innerHTML=custs.map(function(c,i){
+    var pct=(c.weight/maxW*100).toFixed(0);
+    return'<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">'+c.customer+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+fmt(c.weight)+' lbs</div></div>';
+  }).join('');
+
+  var custCO2=custs.slice().sort(function(a,b){return calc(b.tons).ghg-calc(a.tons).ghg;});
+  var maxCO2=custCO2.length>0?calc(custCO2[0].tons).ghg:1;
+  document.getElementById('loRankCO2').innerHTML=custCO2.map(function(c,i){
+    var ghg=calc(c.tons).ghg;var pct=(ghg/maxCO2*100).toFixed(0);
+    return'<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">'+c.customer+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+ghg.toFixed(2)+' t</div></div>';
+  }).join('');
+
+  // Customer table
+  document.getElementById('loCustTH').innerHTML='<tr><th>#</th><th>Customer</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>GHG (tCO2e)</th><th>Products</th></tr>';
+  document.getElementById('loCustTB').innerHTML=custs.map(function(c,i){
+    var ss=calc(c.tons);
+    return'<tr><td><b>'+(i+1)+'</b></td><td>'+c.customer+'</td><td>'+c.loads+'</td><td>'+c.weight.toLocaleString()+'</td><td>'+c.tons.toFixed(1)+'</td><td>'+ss.ghg.toFixed(2)+'</td><td>'+c.productCount+'</td></tr>';
+  }).join('');
+
+  // Intake log
+  document.getElementById('loIntakeCount').textContent=d.length+' records';
+  document.getElementById('loIntakeSub').textContent=d.length+' of '+loRaw.length+' total';
+  document.getElementById('loIntakeTH').innerHTML='<tr><th>Date</th><th>Customer</th><th>Product</th><th>Weight (lbs)</th><th>Tons</th><th>Qty</th><th>Units</th></tr>';
+  document.getElementById('loIntakeTB').innerHTML=d.slice(0,1000).map(function(r){
+    return'<tr><td>'+r.date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</td><td>'+r.customer+'</td><td>'+r.product+'</td><td>'+r.weight.toLocaleString()+'</td><td>'+r.tons.toFixed(2)+'</td><td>'+r.qty+'</td><td>'+r.units+'</td></tr>';
+  }).join('');
+}
+
+function exportLoCSV(){
+  if(!loFiltered.length){alert('No data.');return;}
+  var csv=['Date,Customer,Product,Weight,Tons,Qty,Units'];
+  loFiltered.forEach(function(r){csv.push(r.date.toISOString().split('T')[0]+',"'+r.customer+'","'+r.product+'",'+r.weight+','+r.tons.toFixed(2)+','+r.qty+',"'+r.units+'"');});
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv.join('\n')],{type:'text/csv'}));
+  a.download='Denali_LooseOrganics_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+}
+
+// ================================================================
+// PROGRAM SUMMARY
+// ================================================================
+var sumCharts={};
+function sumKill(id){if(sumCharts[id]){sumCharts[id].destroy();delete sumCharts[id];}}
+
+function renderSummary(){
+  var tTotalW=0,lTotalW=0;
+  filtered.forEach(function(r){tTotalW+=r.weight;});
+  loFiltered.forEach(function(r){lTotalW+=r.weight;});
+  var totalW=tTotalW+lTotalW;
+  var tons=totalW/2000;var tTons=tTotalW/2000;var lTons=lTotalW/2000;
+  var s=calc(tons);var ts=calc(tTons);var ls=calc(lTons);
+  var tLoads=aggLoads(filtered).length;var lLoads=loFiltered.length;
+
+  var bB='rgba(43,91,138,.1)',cB='#2B5B8A',bG='rgba(46,158,107,.1)',cG='#2E9E6B',bT='rgba(58,155,152,.1)',cT='#3A9B98';
+  document.getElementById('sumKpiRow').innerHTML=
+    kpiHTML(IC.scale,bB,cB,'Total Tons (All)',fmt(tons,1),'lbs: '+fmt(totalW))+
+    kpiHTML(IC.cube,bT,cT,'Target Tons',fmt(tTons,1),tLoads+' loads')+
+    kpiHTML(IC.truck,bB,cB,'Loose Organics Tons',fmt(lTons,1),lLoads+' loads')+
+    kpiHTML(IC.leaf,bG,cG,'Total GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.house,bT,cT,'Households Powered',fmt(s.hh,1),'combined')+
+    kpiHTML(IC.car,bB,cB,'Cars Off Road',fmt(s.cars,1),'combined');
+
+  // Combined monthly
+  var tMo=aggMonths(filtered);var lMo=loAggMonths(loFiltered);
+  var allKeys={};tMo.forEach(function(m){allKeys[m.key]=m.label;});lMo.forEach(function(m){allKeys[m.key]=m.label;});
+  var sortedKeys=Object.keys(allKeys).sort();
+  var tData=sortedKeys.map(function(k){var m=tMo.find(function(x){return x.key===k;});return m?m.tons:0;});
+  var lData=sortedKeys.map(function(k){var m=lMo.find(function(x){return x.key===k;});return m?m.tons:0;});
+
+  sumKill('sumMo');
+  sumCharts['sumMo']=new Chart(document.getElementById('sumChMonthly'),{
+    type:'bar',data:{labels:sortedKeys.map(function(k){return allKeys[k];}),datasets:[
+      {label:'Target',data:tData,backgroundColor:C.dkA,borderColor:C.dk,borderWidth:0,borderRadius:6,datalabels:dlBar(C.dk)},
+      {label:'Loose Organics',data:lData,backgroundColor:C.coralA,borderColor:C.coral,borderWidth:0,borderRadius:6,datalabels:dlBar(C.coral)}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},plugins:{datalabels:{display:true}},scales:{y:{beginAtZero:true,stacked:true,grid:{color:'rgba(48,69,92,.05)'}},x:{stacked:true,grid:{display:false}}}}
+  });
+
+  // Split doughnut
+  sumKill('sumSplit');
+  sumCharts['sumSplit']=new Chart(document.getElementById('sumChSplit'),{
+    type:'doughnut',data:{labels:['Target Program','Loose Organics'],datasets:[{data:[tTons,lTons],backgroundColor:[C.p1,C.coral],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right'},datalabels:{display:true,color:'#fff',font:{size:11,weight:700},formatter:function(v,ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return t>0?(v/t*100).toFixed(0)+'%':'';}}}}
+  });
+
+  // Sustainability KPIs
+  document.getElementById('sumSusKpis').innerHTML=
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e combined')+
+    kpiHTML(IC.flame,'rgba(232,131,107,.1)','#C85A42','Biogas Yield',fmt(s.biogas,0),'m3 CH4')+
+    kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh')+
+    kpiHTML(IC.plant,bG,cG,'NPK Fertilizer',fmt(s.npk,0),'kg')+
+    kpiHTML(IC.tree,bG,cG,'Trees Equivalent',fmt(s.trees,0),'planted')+
+    kpiHTML(IC.road,'rgba(232,169,77,.1)','#D4880F','Miles Not Driven',fmt(s.miles,0),'equivalent');
+
+  // Summary table
+  document.getElementById('sumSusSummary').innerHTML=[
+    ['Total Tons (Combined)',tons.toFixed(1),'Tons'],
+    ['Target Program',tTons.toFixed(1),'Tons'],
+    ['Loose Organics',lTons.toFixed(1),'Tons'],
+    ['GHG Avoided',s.ghg.toFixed(1),'tCO2e'],
+    ['Biogas Yield',fmt(s.biogas),'m3'],
+    ['Energy Generated',fmt(s.energy),'kWh'],
+    ['Households Powered',s.hh.toFixed(1),''],
+    ['Cars Off Road',s.cars.toFixed(1),'']
+  ].map(function(r){return'<div class="sus-row"><span class="sus-metric">'+r[0]+'</span><span><span class="sus-val">'+r[1]+'</span><span class="sus-unit">'+r[2]+'</span></span></div>';}).join('');
+
+  // GHG by program
+  sumKill('sumGHG');
+  sumCharts['sumGHG']=new Chart(document.getElementById('sumChGHG'),{
+    type:'bar',data:{labels:['Target Program','Loose Organics','Combined'],datasets:[{data:[ts.ghg,ls.ghg,s.ghg],backgroundColor:[C.p1,C.coral,C.sage],borderWidth:0,borderRadius:8,datalabels:{display:true,anchor:'end',align:'end',color:C.dk,font:{size:11,weight:700},formatter:function(v){return v.toFixed(1);}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+  });
+}
+</script>
+</body>
+</html>

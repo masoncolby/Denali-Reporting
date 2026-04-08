@@ -467,6 +467,14 @@ tr:hover td{background:#F6F8FA}
       <button class="nav-tab active" data-page="sum-overview" onclick="showPage(this,'summary')">Combined Overview</button>
       <button class="nav-tab" data-page="sum-sustainability" onclick="showPage(this,'summary')">Combined Sustainability</button>
     </div>
+    <div class="fbar">
+      <span style="font-size:11px;color:var(--text2);font-weight:500">Combined view of all loaded programs</span>
+      <div style="flex:1"></div>
+      <button class="up-btn" id="sumDlReport" onclick="generateSummaryPDF()" style="font-size:11px;padding:6px 14px;background:rgba(104,188,212,.15);border-color:rgba(104,188,212,.3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        Download Summary Report
+      </button>
+    </div>
     <main class="main">
       <div class="sec"><div class="sec-t">All Programs Summary</div><div class="sec-s" id="sumPeriodLabel">Combined Target + Loose Organics</div></div>
       <div id="sumContent">
@@ -1234,8 +1242,11 @@ function generatePDF(){
   }else if(prog==='loose'){
     if(!loFiltered.length){alert('No Loose Organics data loaded.');return;}
     generateLoosePDF();
+  }else if(prog==='summary'){
+    if(!filtered.length&&!loFiltered.length){alert('No data loaded. Import data on the Target or Loose Organics tabs first.');return;}
+    generateSummaryPDF();
   }else{
-    alert('PDF export is available from the Target Program or Loose Organics tabs.');
+    alert('PDF export is available from any program tab.');
   }
 }
 
@@ -2170,6 +2181,179 @@ function renderSummary(){
   sumCharts['sumGHG']=new Chart(document.getElementById('sumChGHG'),{
     type:'bar',data:{labels:['Target Program','Loose Organics','Combined'],datasets:[{data:[ts.ghg,ls.ghg,s.ghg],backgroundColor:[C.p1,C.coral,C.sage],borderWidth:0,borderRadius:8,datalabels:{display:true,anchor:'end',align:'end',color:C.dk,font:{size:11,weight:700},formatter:function(v){return v.toFixed(1);}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
+}
+
+// ================================================================
+// PROGRAM SUMMARY PDF
+// ================================================================
+function generateSummaryPDF(){
+  var btn=document.getElementById('sumDlReport');
+  btn.textContent='Generating...';btn.style.pointerEvents='none';
+  try{
+
+  var tTotalW=0,lTotalW=0;
+  filtered.forEach(function(r){tTotalW+=r.weight;});
+  loFiltered.forEach(function(r){lTotalW+=r.weight;});
+  var totalW=tTotalW+lTotalW;var tons=totalW/2000;
+  var tTons=tTotalW/2000;var lTons=lTotalW/2000;
+  var s=calc(tons);var ts=calc(tTons);var ls=calc(lTons);
+  var tLoads=filtered.length>0?aggLoads(filtered).length:0;
+  var lLoads=loFiltered.length;
+  var tStores=filtered.length>0?aggStores(filtered).length:0;
+  var lCusts=loFiltered.length>0?loAggCustomers(loFiltered).length:0;
+
+  // Date ranges
+  var earliest=null,latest=null;
+  if(filtered.length>0){earliest=filtered[0].date;latest=filtered[filtered.length-1].date;}
+  if(loFiltered.length>0){
+    if(!earliest||loFiltered[0].date<earliest)earliest=loFiltered[0].date;
+    if(!latest||loFiltered[loFiltered.length-1].date>latest)latest=loFiltered[loFiltered.length-1].date;
+  }
+  var dateRange=earliest?earliest.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+latest.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'No data';
+  var daySpan=earliest&&latest?Math.max(1,Math.ceil((latest-earliest)/86400000)):1;
+  var annTons=tons/daySpan*365;
+
+  // Capture charts
+  var chartImgs={};
+  var pages=document.querySelectorAll('#prog-summary .page');
+  var activePage=document.querySelector('#prog-summary .page.active');
+  pages.forEach(function(p){p.style.display='block';p.classList.add('active');});
+  document.body.offsetHeight;
+  ['sumChMonthly','sumChSplit','sumChGHG'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el.width>0&&el.height>0){try{var du=el.toDataURL('image/png',0.9);if(du&&du.length>100)chartImgs[id]=du;}catch(e){}}
+  });
+  pages.forEach(function(p){p.classList.remove('active');p.style.display='';});
+  if(activePage)activePage.classList.add('active');
+
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210,H=297,ML=18,MR=18,PW=W-ML-MR;
+  var dnDark=[48,69,92],dnLight=[104,188,212],dnDeep=[30,45,61];
+  var white=[255,255,255],bg=[243,245,247],txtM=[138,151,164];
+  var green=[46,158,107],amber=[212,136,15];
+
+  function setF(st,sz){doc.setFont('helvetica',st==='b'?'bold':st==='i'?'italic':'normal');doc.setFontSize(sz);}
+  function rgb(c){doc.setTextColor(c[0],c[1],c[2]);}
+  function fill(c){doc.setFillColor(c[0],c[1],c[2]);}
+  function header(pg,total){fill(dnDeep);doc.rect(0,0,W,16,'F');rgb(dnLight);setF('b',12);doc.text('DENALI',ML,10.5);rgb(white);setF('n',7);doc.text('All Programs Summary',ML+28,10.5);rgb(txtM);setF('n',7);doc.text('Page '+pg+' of '+total,W-MR,10.5,{align:'right'});}
+  function footer(){doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);rgb(txtM);setF('n',6.5);doc.text('DENALI  |  All Programs Summary  |  Confidential  |  Prepared by VIRESCO AD LLC',W/2,H-9,{align:'center'});doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});}
+  function secBar(y,title,sub){fill(dnDark);doc.rect(ML,y,PW,9,'F');fill(dnLight);doc.rect(ML,y,3,9,'F');rgb(white);setF('b',9.5);doc.text(title.toUpperCase(),ML+7,y+6.2);if(sub){setF('n',6.5);doc.text(sub,W-MR-2,y+6.2,{align:'right'});}return y+13;}
+  function kpiBox(x,y,w,label,value,sub,accent){fill(bg);doc.roundedRect(x,y,w,22,1.5,1.5,'F');var ac=accent||dnLight;fill(ac);doc.rect(x,y,w,2,'F');rgb(ac);setF('b',6);doc.text(label.toUpperCase(),x+4,y+9);rgb(dnDeep);setF('b',13);doc.text(String(value),x+4,y+16.5);rgb(txtM);setF('n',6);doc.text(String(sub),x+4,y+20.5);}
+  function tblRow(y,cols,widths,isHdr,isBg){var x=ML;var h=isHdr?8:7;if(isHdr){fill(dnDark);doc.rect(ML,y,PW,h,'F');rgb(white);setF('b',6.5);}else{if(isBg){fill([248,249,251]);doc.rect(ML,y,PW,h,'F');}rgb(dnDeep);setF('n',7);}for(var i=0;i<cols.length;i++){var a=i===0?'left':'right';doc.text(String(cols[i]),a==='left'?x+3:x+widths[i]-3,y+(isHdr?5.5:5),{align:a});x+=widths[i];}return y+h;}
+  function calloutBox(y,text,accent){setF('n',7.5);var lines=doc.splitTextToSize(text,PW-18);var bh=lines.length*4+6;fill([248,250,252]);doc.roundedRect(ML,y,PW,bh,1.5,1.5,'F');fill(accent||green);doc.rect(ML,y,2.5,bh,'F');rgb(dnDeep);setF('n',7.5);doc.text(lines,ML+7,y+5);return y+bh+4;}
+  function addChart(y,id,h,cap){if(chartImgs[id]){try{doc.addImage(chartImgs[id],'PNG',ML,y,PW,h);y+=h+2;}catch(e){}}if(cap){rgb(txtM);setF('i',6);doc.text(cap,ML,y);y+=5;}return y;}
+
+  var TP=4;var kw=(PW-8)/3;
+
+  // PAGE 1 - COVER
+  fill(dnDeep);doc.rect(0,0,W,H,'F');
+  fill(dnDark);doc.triangle(W/2,H*0.28,W*0.12,H*0.68,W*0.88,H*0.68,'F');
+  fill([38,56,72]);doc.triangle(W*0.35,H*0.38,W*0.05,H*0.68,W*0.55,H*0.68,'F');
+  fill([52,78,100]);doc.triangle(W*0.7,H*0.35,W*0.5,H*0.68,W*0.95,H*0.68,'F');
+  fill(dnLight);doc.rect(0,H*0.68,W,1.5,'F');
+  rgb(dnLight);setF('b',42);doc.text('DENALI',W/2,75,{align:'center'});
+  doc.setDrawColor(dnLight[0],dnLight[1],dnLight[2]);doc.setLineWidth(0.4);doc.line(W/2-35,83,W/2+35,83);
+  rgb(white);setF('n',13);doc.text('All Programs Summary',W/2,96,{align:'center'});
+  setF('b',18);doc.text('Combined Report',W/2,110,{align:'center'});
+  rgb(dnLight);setF('n',11);doc.text('Target Program + Loose Organics',W/2,126,{align:'center'});
+  setF('n',10);doc.text(dateRange,W/2,134,{align:'center'});
+  fill([38,56,72]);doc.roundedRect(W/2-50,H-55,100,30,2,2,'F');
+  rgb([180,200,210]);setF('n',8);
+  doc.text('Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-44,{align:'center'});
+  doc.text('Prepared by VIRESCO AD LLC',W/2,H-37,{align:'center'});
+  rgb(txtM);setF('i',7);doc.text('Confidential - For Authorized Recipients Only',W/2,H-30,{align:'center'});
+
+  // PAGE 2 - COMBINED OVERVIEW
+  doc.addPage();header(2,TP);footer();
+  var y=22;
+  y=secBar(y,'Combined Program Overview',dateRange);
+
+  kpiBox(ML,y,kw,'Total Tons (All)',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
+  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(s.ghg,1),'tCO2e combined',green);
+  kpiBox(ML+2*(kw+4),y,kw,'Energy Generated',fmt(s.energy,0)+' kWh','renewable',dnLight);
+  y+=26;
+  kpiBox(ML,y,kw,'Target Program',fmt(tTons,1)+' tons',tLoads+' loads | '+tStores+' stores',dnDark);
+  kpiBox(ML+kw+4,y,kw,'Loose Organics',fmt(lTons,1)+' tons',lLoads+' loads | '+lCusts+' customers',amber);
+  kpiBox(ML+2*(kw+4),y,kw,'Annualized',fmt(annTons,0)+' tons','12-month projection',dnLight);
+  y+=30;
+
+  // Executive narrative
+  var tPct=tons>0?(tTons/tons*100).toFixed(0):0;
+  var lPct=tons>0?(lTons/tons*100).toFixed(0):0;
+  var execText='Across both the Target bin collection program and the loose organics intake stream, the Denali partnership processed a combined '+fmt(totalW)+' pounds ('+tons.toFixed(1)+' tons) of organic material during the reporting period of '+dateRange+'. ';
+  execText+='The Target program contributed '+tTons.toFixed(1)+' tons ('+tPct+'% of total volume) across '+tLoads+' consolidated truckloads from '+tStores+' store locations, while the loose organics stream delivered '+lTons.toFixed(1)+' tons ('+lPct+'%) through '+lLoads+' loads from '+lCusts+' customer sources. ';
+  execText+='Combined, this diversion effort avoided an estimated '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions, generated '+fmt(s.energy)+' kWh of renewable energy, and produced '+fmt(s.npk)+' kg of NPK-rich digestate through anaerobic digestion at the VIRESCO facility in Turtle Lake, Wisconsin. ';
+  execText+='At current collection rates, the partnership is projected to process approximately '+fmt(annTons,0)+' tons annually, reinforcing its position as a scalable and impactful organics diversion channel for the Midwest corridor.';
+  y=calloutBox(y,execText,dnDark);
+  y+=2;
+  y=addChart(y,'sumChMonthly',50,'Combined Monthly Tonnage by Program');
+
+  // PAGE 3 - PROGRAM COMPARISON
+  doc.addPage();header(3,TP);footer();
+  y=22;
+  y=secBar(y,'Program Comparison','Side-by-side analysis');
+
+  // Comparison table
+  var cmpW=[55,(PW-55)/3,(PW-55)/3,(PW-55)/3];
+  y=tblRow(y,['Metric','Target Program','Loose Organics','Combined'],cmpW,true,false);
+  y=tblRow(y,['Total Tons',tTons.toFixed(1),lTons.toFixed(1),tons.toFixed(1)],cmpW,false,true);
+  y=tblRow(y,['Total lbs',fmt(tTotalW),fmt(lTotalW),fmt(totalW)],cmpW,false,false);
+  y=tblRow(y,['Load Count',tLoads,lLoads,tLoads+lLoads],cmpW,false,true);
+  y=tblRow(y,['GHG Avoided (tCO2e)',ts.ghg.toFixed(1),ls.ghg.toFixed(1),s.ghg.toFixed(1)],cmpW,false,false);
+  y=tblRow(y,['Biogas (m3)',fmt(ts.biogas),fmt(ls.biogas),fmt(s.biogas)],cmpW,false,true);
+  y=tblRow(y,['Energy (kWh)',fmt(ts.energy),fmt(ls.energy),fmt(s.energy)],cmpW,false,false);
+  y=tblRow(y,['NPK Fertilizer (kg)',fmt(ts.npk),fmt(ls.npk),fmt(s.npk)],cmpW,false,true);
+  y=tblRow(y,['Carbon (lbs)',fmt(ts.carbonLbs),fmt(ls.carbonLbs),fmt(s.carbonLbs)],cmpW,false,false);
+  y=tblRow(y,['Households Powered',ts.hh.toFixed(1),ls.hh.toFixed(1),s.hh.toFixed(1)],cmpW,false,true);
+  y=tblRow(y,['Cars Off Road',ts.cars.toFixed(1),ls.cars.toFixed(1),s.cars.toFixed(1)],cmpW,false,false);
+  y=tblRow(y,['Trees Equivalent',fmt(ts.trees),fmt(ls.trees),fmt(s.trees)],cmpW,false,true);
+  y=tblRow(y,['Miles Not Driven',fmt(ts.miles),fmt(ls.miles),fmt(s.miles)],cmpW,false,false);
+  y+=6;
+
+  y=addChart(y,'sumChSplit',55,'Program Contribution Split');
+
+  // PAGE 4 - SUSTAINABILITY
+  doc.addPage();header(4,TP);footer();
+  y=22;
+  y=secBar(y,'Combined Sustainability Impact','EPA Standard Factors | 60% Digestor Efficiency');
+
+  // Equivalents boxes
+  var eqPairs=[
+    {v:fmt(s.cars,1)+' cars/yr',l:'OFF THE ROAD',c:dnDark},
+    {v:fmt(s.trees,0)+' trees/yr',l:'EQUIVALENT PLANTED',c:green},
+    {v:fmt(s.hh,1)+' homes',l:'POWERED',c:dnLight},
+    {v:fmt(s.miles,0)+' miles',l:'NOT DRIVEN',c:amber}
+  ];
+  var eqW=(PW-6)/2;
+  eqPairs.forEach(function(eq,i){
+    var ex=ML+(i%2)*(eqW+6);
+    var ey=y+Math.floor(i/2)*18;
+    fill(bg);doc.roundedRect(ex,ey,eqW,14,1.5,1.5,'F');
+    fill(eq.c);doc.rect(ex,ey,2.5,14,'F');
+    rgb(dnDeep);setF('b',10);doc.text(eq.v,ex+7,ey+6.5);
+    rgb(txtM);setF('b',6);doc.text(eq.l,ex+7,ey+11);
+  });
+  y+=42;
+
+  var sustText='The combined Denali organics partnership diverted '+tons.toFixed(1)+' tons of organic waste from landfill, avoiding '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions through anaerobic digestion. This environmental impact is equivalent to removing '+fmt(s.cars,1)+' passenger vehicles from the road, planting '+fmt(s.trees,0)+' trees, or powering '+s.hh.toFixed(1)+' average American households with renewable energy. ';
+  sustText+='The digestion process yielded '+fmt(s.biogas)+' cubic meters of biogas and '+fmt(s.energy)+' kWh of clean electricity, while capturing '+fmt(s.carbonLbs)+' pounds of organic carbon and producing '+fmt(s.npk)+' kg of nutrient-rich digestate for agricultural use. ';
+  sustText+='These results demonstrate the tangible environmental and economic value of the partnership, with the Target bin program and loose organics stream working as complementary diversion channels that maximize throughput at the Turtle Lake facility.';
+  y=calloutBox(y,sustText,green);
+  y+=2;
+  y=addChart(y,'sumChGHG',50,'GHG Avoided by Program (tCO2e)');
+
+  // Footnotes
+  if(y<H-20){
+    rgb(txtM);setF('i',6);
+    doc.text('* Sustainability factors: CARB methodology (0.62 tCO2e/ton), EPA equivalency factors',ML,y+4);
+    doc.text('* Biogas: 100 m3/ton x 60% methane capture | Energy: 40% biogas-to-energy conversion | NPK: 15 kg/ton',ML,y+8);
+  }
+
+  doc.save('Denali_Combined_Summary_'+new Date().toISOString().split('T')[0]+'.pdf');
+  }catch(err){console.error('Summary PDF error:',err);alert('Error generating PDF: '+err.message);}
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Download Summary Report';
+  btn.style.pointerEvents='auto';
 }
 </script>
 </body>

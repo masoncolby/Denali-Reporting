@@ -783,6 +783,12 @@ function renderOverview(){
   if(d.length>1){daySpan=Math.max(1,Math.ceil((d[d.length-1].date-d[0].date)/86400000));}
   var annualized=tons/daySpan*365;
 
+  // Unidentified stores (9999)
+  var unidentified=d.filter(function(r){return r.store==='9999';});
+  var unidCount=unidentified.length;
+  var unidPct=d.length>0?(unidCount/d.length*100).toFixed(1):0;
+  var identifiedStores=stores.filter(function(s){return s!=='9999';});
+
   var bB='rgba(43,91,138,.1)',cB='#2B5B8A'; // blue icon bg/color
   var bG='rgba(46,158,107,.1)',cG='#2E9E6B'; // green
   var bT='rgba(58,155,152,.1)',cT='#3A9B98'; // teal
@@ -791,9 +797,26 @@ function renderOverview(){
     kpiHTML(IC.scale,bB,cB,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW))+
     kpiHTML(IC.cube,bT,cT,'Total Bins',fmt(totalBins),loads.length+' loads')+
     kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(sus.ghg,1),'tCO₂e')+
-    kpiHTML(IC.pin,bB,cB,'Active Stores',stores.length,'of 45')+
+    kpiHTML(IC.pin,bB,cB,'Active Stores',identifiedStores.length,(unidCount>0?unidCount+' bins unidentified':'all identified'))+
     kpiHTML(IC.gauge,bA,cA,'Avg Load Efficiency',avgEff.toFixed(0)+'%',fmt(MAX_BINS)+' max bins')+
     kpiHTML(IC.trend,bT,cT,'Avg Tons / Week',fmt(avgTonsWk,1),'↓ '+fmt(lowWk,1)+' low · ↑ '+fmt(highWk,1)+' high');
+
+  // Unidentified store callout banner
+  var bannerEl=document.getElementById('unidBanner');
+  if(!bannerEl){
+    bannerEl=document.createElement('div');bannerEl.id='unidBanner';
+    bannerEl.style.cssText='margin-bottom:14px;padding:12px 18px;border-radius:8px;border-left:4px solid #D4880F;background:rgba(212,136,15,.08);display:flex;align-items:center;gap:12px;font-size:12px;color:#1E2D3D';
+    var kpiRow=document.getElementById('kpiRow');
+    kpiRow.parentNode.insertBefore(bannerEl,kpiRow.nextSibling);
+  }
+  if(unidCount>0){
+    var unidW=unidentified.reduce(function(a,r){return a+r.weight;},0);
+    bannerEl.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#D4880F" stroke-width="2" style="width:20px;height:20px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'+
+      '<div><b>'+unidCount+' bins ('+unidPct+'%)</b> are tagged with store code 9999 (unidentified). These represent <b>'+fmt(unidW)+' lbs ('+fmt(unidW/2000,1)+' tons)</b> of material where the originating Target store has not yet been assigned. Update store codes in the source data to improve store-level reporting accuracy.</div>';
+    bannerEl.style.display='flex';
+  }else{
+    bannerEl.style.display='none';
+  }
 
   // Monthly tons chart
   var mo=aggMonths(d);
@@ -1300,12 +1323,21 @@ function gatherAIAnalysis(){
   var topStoreStr=top3.map(function(st){return st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
   var contamRate=(filtered.filter(function(r){return r.contam;}).length/filtered.length*100);
 
+  // Unidentified store tracking (code 9999)
+  var unidBinsPDF=filtered.filter(function(r){return r.store==='9999';});
+  var unidCountPDF=unidBinsPDF.length;
+  var unidWeightPDF=unidBinsPDF.reduce(function(a,r){return a+r.weight;},0);
+  var unidPctPDF=filtered.length>0?(unidCountPDF/filtered.length*100).toFixed(1):0;
+  var identStoresPDF=stores.filter(function(st){return st.store!=='9999';});
+
   // Date formatting
   var d1=filtered[0].date;var d2=filtered[filtered.length-1].date;
   var dateRange=d1.toLocaleDateString('en-US',{month:'long',day:'numeric'})+' through '+d2.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 
   // ---- EXECUTIVE SUMMARY ----
-  var exec='During the reporting period of '+dateRange+', the Target Midwest organics collection program processed a total of '+fmt(totalW)+' pounds ('+tons.toFixed(1)+' tons) of organic material through '+loads.length+' consolidated truckloads originating from '+stores.length+' active Target store locations. '+
+  var storeNote=identStoresPDF.length+' identified Target store locations';
+  if(unidCountPDF>0)storeNote+=', with an additional '+unidCountPDF+' bins ('+unidPctPDF+'%) currently tagged as unidentified (store code 9999)';
+  var exec='During the reporting period of '+dateRange+', the Target Midwest organics collection program processed a total of '+fmt(totalW)+' pounds ('+tons.toFixed(1)+' tons) of organic material through '+loads.length+' consolidated truckloads originating from '+storeNote+'. '+
     'Weekly collection volume demonstrated a '+trendDir+' trajectory, increasing from an average of '+fhAvg.toFixed(1)+' tons per week in the first half of the period to '+shAvg.toFixed(1)+' tons per week in the second half';
   if(trendPct>0)exec+=', representing a '+trendPct.toFixed(0)+'% improvement in throughput';
   exec+='. ';
@@ -1329,6 +1361,7 @@ function gatherAIAnalysis(){
   else if(contamRate<5)ops+='The contamination rate of '+contamRate.toFixed(1)+'% across '+filtered.length+' scanned bins remains within acceptable parameters, though continued monitoring is recommended to maintain feedstock quality standards. ';
   else ops+='The contamination rate of '+contamRate.toFixed(1)+'% warrants attention and may benefit from targeted training at high-contamination store locations to protect AD processing efficiency. ';
   ops+='The top-contributing locations — '+topStoreStr+' — collectively accounted for a disproportionate share of total volume, suggesting these stores could serve as models for optimizing collection practices across the network.';
+  if(unidCountPDF>0)ops+=' Note: '+unidCountPDF+' bins ('+unidPctPDF+'% of total) are currently assigned store code 9999, representing '+fmt(unidWeightPDF)+' lbs of material where the originating Target store has not yet been identified. Resolving these assignments will improve the accuracy of store-level performance tracking and route optimization analysis.';
 
   // ---- FREIGHT & RECOMMENDATIONS ----
   var freight='At the standard route rate of $600 per load from the consolidation warehouse to Turtle Lake, the program incurred $'+fmt(loads.length*RATE)+' in total freight costs across '+loads.length+' loads. ';
@@ -1519,7 +1552,9 @@ function buildPDF(ai){
   var kw=(PW-8)/3;
   kpiBox(ML,y,kw,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
   kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(sus.ghg,1),'tCO2e',green);
-  kpiBox(ML+2*(kw+4),y,kw,'Active Stores',stores.length,'of 45 locations',dnLight);
+  var pdfIdentStores=stores.filter(function(st){return st.store!=='9999';});
+  var pdfUnidBins=filtered.filter(function(r){return r.store==='9999';}).length;
+  kpiBox(ML+2*(kw+4),y,kw,'Active Stores',pdfIdentStores.length,pdfUnidBins>0?pdfUnidBins+' bins unidentified':'all stores identified',dnLight);
   y+=26;
   kpiBox(ML,y,kw,'Avg Load Efficiency',avgEff.toFixed(0)+'%','143 max bins/truck',amber);
   kpiBox(ML+kw+4,y,kw,'Avg Tons / Week',fmt(avgTonsWk,1),'Low: '+fmt(lowWk,1)+' | High: '+fmt(highWk,1),dnDark);

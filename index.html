@@ -619,22 +619,22 @@ function normalize(json){
       date:d,
       load:parseInt(row[colMap.load])||0,
       acct:String(row[colMap.acct]||''),
-      store:parseInt(row[colMap.store])||0,
+      store:String(row[colMap.store]||'').replace(/^Store\s*#?\s*/i,'').trim()||'Unknown',
       weight:parseFloat(String(row[colMap.weight]).replace(/[^0-9.\-]/g,''))||0,
       contam:String(row[colMap.contam]||'').toLowerCase()==='true',
       image:row[colMap.image]||''
     };
-  }).sort(function(a,b){return a.date-b.date||a.load-b.load||a.store-b.store;});
+  }).sort(function(a,b){return a.date-b.date||a.load-b.load;});
 }
 
 // FILTERS
 function popFilters(){
-  var stores=unique(raw,'store').sort(function(a,b){return a-b;});
-  var loads=unique(raw,'load').sort(function(a,b){return a-b;});
+  var stores=unique(raw,'store').sort();
+  var loads=unique(raw,'load').sort(function(a,b){return Number(a)-Number(b);});
   var months=Array.from(new Set(raw.map(function(r){return r.date.getMonth();}))).sort(function(a,b){return a-b;});
   var years=Array.from(new Set(raw.map(function(r){return r.date.getFullYear();}))).sort();
   var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  fillSel('fStore',stores.map(function(s){return{v:s,t:'Store #'+s};}));
+  fillSel('fStore',stores.map(function(s){return{v:s,t:s};}));
   fillSel('fLoad',loads.map(function(l){return{v:l,t:'Load #'+l};}));
   fillSel('fMonth',months.map(function(m){return{v:m,t:mn[m]};}));
   fillSel('fYear',years.map(function(y){return{v:y,t:String(y)};}));
@@ -645,7 +645,7 @@ function fillSel(id,opts){
   s.innerHTML='<option value="all">'+first+'</option>';
   opts.forEach(function(o){var opt=document.createElement('option');opt.value=o.v;opt.textContent=o.t;s.appendChild(opt);});
 }
-function unique(arr,key){var s={};arr.forEach(function(r){s[r[key]]=true;});return Object.keys(s).map(Number);}
+function unique(arr,key){var s={};arr.forEach(function(r){s[r[key]]=true;});return Object.keys(s);}
 
 function setP(btn){document.querySelectorAll('.ptab').forEach(function(t){t.classList.remove('active');});btn.classList.add('active');curP=btn.getAttribute('data-p');applyF();}
 function showPage(btn,prog){
@@ -671,7 +671,7 @@ function applyF(){
   var month=document.getElementById('fMonth').value;
   var year=document.getElementById('fYear').value;
   var data=raw.slice();
-  if(store!=='all')data=data.filter(function(r){return r.store===parseInt(store);});
+  if(store!=='all')data=data.filter(function(r){return r.store===store;});
   if(load!=='all')data=data.filter(function(r){return r.load===parseInt(load);});
   if(month!=='all')data=data.filter(function(r){return r.date.getMonth()===parseInt(month);});
   if(year!=='all')data=data.filter(function(r){return r.date.getFullYear()===parseInt(year);});
@@ -923,7 +923,7 @@ function renderSustainability(){
   var st=aggStores(filtered).slice(0,25);
   kill('ghgStore');
   charts['ghgStore']=new Chart(document.getElementById('chGHGStore'),{
-    type:'bar',data:{labels:st.map(function(s){return'Store #'+s.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+    type:'bar',data:{labels:st.map(function(s){returns.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
 
   // Carbon total header
@@ -936,7 +936,7 @@ function renderSustainability(){
   kill('carbon');
   charts['carbon']=new Chart(document.getElementById('chCarbon'),{
     type:'bar',data:{
-      labels:stCarbon.map(function(s){return'Store #'+s.store;}),
+      labels:stCarbon.map(function(s){returns.store;}),
       datasets:[{
         label:'Lbs of Carbon',
         data:stCarbon.map(function(s){return s.carbonLbs;}),
@@ -1154,7 +1154,7 @@ function renderStores(){
   // Weight ranking
   document.getElementById('rankWeight').innerHTML=st.map(function(s,i){
     var pct=(s.weight/maxW*100).toFixed(0);
-    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">Store #'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+fmt(s.weight)+' lbs</div></div>';
+    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+fmt(s.weight)+' lbs</div></div>';
   }).join('');
 
   // CO2 ranking
@@ -1162,14 +1162,14 @@ function renderStores(){
   var maxCO2=stCO2.length>0?calc(stCO2[0].tons).ghg:1;
   document.getElementById('rankCO2').innerHTML=stCO2.map(function(s,i){
     var ghg=calc(s.tons).ghg;var pct=(ghg/maxCO2*100).toFixed(0);
-    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">Store #'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+ghg.toFixed(2)+' t</div></div>';
+    return '<div class="rank-row"><div class="rank-num'+(i<3?' top3':'')+'">'+String(i+1)+'</div><div class="rank-name">'+s.store+'</div><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div><div class="rank-val">'+ghg.toFixed(2)+' t</div></div>';
   }).join('');
 
   // Store summary table
   document.getElementById('storeTH').innerHTML='<tr><th>Rank</th><th>Store</th><th>Bins</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>Avg Bin (lbs)</th><th>GHG (tCO₂e)</th><th>Households</th><th>Load Freq</th></tr>';
   document.getElementById('storeTB').innerHTML=st.map(function(s,i){
     var sus=calc(s.tons);
-    return '<tr><td><b>'+(i+1)+'</b></td><td>Store #'+s.store+'</td><td>'+s.bins+'</td><td>'+s.loadCount+'</td><td>'+s.weight.toLocaleString()+'</td><td>'+s.tons.toFixed(1)+'</td><td>'+s.avgBin.toFixed(0)+'</td><td>'+sus.ghg.toFixed(2)+'</td><td>'+sus.hh.toFixed(2)+'</td><td>'+s.loadCount+'</td></tr>';
+    return '<tr><td><b>'+(i+1)+'</b></td><td>'+s.store+'</td><td>'+s.bins+'</td><td>'+s.loadCount+'</td><td>'+s.weight.toLocaleString()+'</td><td>'+s.tons.toFixed(1)+'</td><td>'+s.avgBin.toFixed(0)+'</td><td>'+sus.ghg.toFixed(2)+'</td><td>'+sus.hh.toFixed(2)+'</td><td>'+s.loadCount+'</td></tr>';
   }).join('');
 
   // Tons per store per month heatmap-style
@@ -1297,7 +1297,7 @@ function gatherAIAnalysis(){
   // Store analysis
   var top3=stores.slice(0,3);
   var bot3=stores.slice(-3).reverse();
-  var topStoreStr=top3.map(function(st){return'Store #'+st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
+  var topStoreStr=top3.map(function(st){return''+st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
   var contamRate=(filtered.filter(function(r){return r.contam;}).length/filtered.length*100);
 
   // Date formatting
@@ -1630,7 +1630,7 @@ function buildPDF(ai){
   stores.slice(0,30).forEach(function(s,i){
     if(y>H-25){doc.addPage();header(5,TP);footer();y=22;y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);}
     var ss=calc(s.tons);
-    y=tblRow(y,[i+1,'Store #'+s.store,s.bins,s.loadCount,s.weight.toLocaleString(),s.tons.toFixed(1),ss.ghg.toFixed(2)],stW,false,i%2===0);
+    y=tblRow(y,[i+1,s.store,s.bins,s.loadCount,s.weight.toLocaleString(),s.tons.toFixed(1),ss.ghg.toFixed(2)],stW,false,i%2===0);
   });
 
   // CO2e by store chart if space
@@ -1654,7 +1654,7 @@ function buildPDF(ai){
   var totalCarbon=tons*2000*CARBON_PCT;
   stores.slice(0,10).forEach(function(s,i){
     var cl=s.weight*CARBON_PCT;
-    y=tblRow(y,[i+1,'Store #'+s.store,s.weight.toLocaleString(),fmt(cl),totalCarbon>0?(cl/totalCarbon*100).toFixed(1)+'%':'0%'],ccW,false,i%2===0);
+    y=tblRow(y,[i+1,s.store,s.weight.toLocaleString(),fmt(cl),totalCarbon>0?(cl/totalCarbon*100).toFixed(1)+'%':'0%'],ccW,false,i%2===0);
   });
 
   y+=6;

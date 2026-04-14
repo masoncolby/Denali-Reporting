@@ -923,7 +923,7 @@ function renderSustainability(){
   var st=aggStores(filtered).slice(0,25);
   kill('ghgStore');
   charts['ghgStore']=new Chart(document.getElementById('chGHGStore'),{
-    type:'bar',data:{labels:st.map(function(s){returns.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+    type:'bar',data:{labels:st.map(function(s){return s.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
 
   // Carbon total header
@@ -936,7 +936,7 @@ function renderSustainability(){
   kill('carbon');
   charts['carbon']=new Chart(document.getElementById('chCarbon'),{
     type:'bar',data:{
-      labels:stCarbon.map(function(s){returns.store;}),
+      labels:stCarbon.map(function(s){return s.store;}),
       datasets:[{
         label:'Lbs of Carbon',
         data:stCarbon.map(function(s){return s.carbonLbs;}),
@@ -1297,7 +1297,7 @@ function gatherAIAnalysis(){
   // Store analysis
   var top3=stores.slice(0,3);
   var bot3=stores.slice(-3).reverse();
-  var topStoreStr=top3.map(function(st){return''+st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
+  var topStoreStr=top3.map(function(st){return st.store+' ('+st.tons.toFixed(1)+' tons)';}).join(', ');
   var contamRate=(filtered.filter(function(r){return r.contam;}).length/filtered.length*100);
 
   // Date formatting

@@ -329,13 +329,26 @@ tr:hover td{background:#F6F8FA}
     <!-- STORE RANKINGS -->
     <div class="page" id="pg-stores">
       <div class="sec"><div class="sec-t">Store Rankings</div><div class="sec-s">Running totals and per-store sustainability impact</div></div>
+
+      <!-- STORE BIN EFFICIENCY REPORT -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-t">Store Bin Efficiency Report</div>
+        <div class="sec-s" style="margin-bottom:10px">Bins collected, average bin weight, and total volume by store for the selected period</div>
+        <div class="tbl-wrap"><table><thead id="binEffTH"></thead><tbody id="binEffTB"></tbody></table></div>
+      </div>
+
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="card"><div class="card-t">Bins per Store</div><div class="ch-wrap tall"><canvas id="chBinsPerStore"></canvas></div></div>
+        <div class="card"><div class="card-t">Avg Bin Weight by Store (lbs)</div><div class="ch-wrap tall"><canvas id="chAvgBinWeight"></canvas></div></div>
+      </div>
+
       <div class="grid g2" style="margin-bottom:14px">
         <div class="card" style="max-height:600px;overflow-y:auto">
           <div class="card-t">Stores Ranked by Total Weight</div>
           <div id="rankWeight"></div>
         </div>
         <div class="card" style="max-height:600px;overflow-y:auto">
-          <div class="card-t">Stores Ranked by CO₂e Avoided</div>
+          <div class="card-t">Stores Ranked by CO2e Avoided</div>
           <div id="rankCO2"></div>
         </div>
       </div>
@@ -1174,6 +1187,32 @@ function renderStores(){
   var st=aggStores(filtered);
   var maxW=st.length>0?st[0].weight:1;
 
+  // ---- BIN EFFICIENCY REPORT ----
+  var allAvgBin=filtered.length>0?filtered.reduce(function(a,r){return a+r.weight;},0)/filtered.length:0;
+  var stByBins=st.slice().sort(function(a,b){return b.bins-a.bins;});
+  document.getElementById('binEffTH').innerHTML='<tr><th>Store</th><th>Total Bins</th><th>Total lbs</th><th>Total Tons</th><th>Avg Bin Weight</th><th>vs. Program Avg</th><th>Loads Appeared</th><th>Bins/Load</th></tr>';
+  document.getElementById('binEffTB').innerHTML=stByBins.map(function(s){
+    var diff=s.avgBin-allAvgBin;
+    var diffPct=allAvgBin>0?(diff/allAvgBin*100).toFixed(0):0;
+    var diffTag=diff>=0?'<span class="tag tag-g">+'+diffPct+'%</span>':'<span class="tag tag-r">'+diffPct+'%</span>';
+    var binsPerLoad=s.loadCount>0?(s.bins/s.loadCount).toFixed(1):'—';
+    return '<tr><td><b>'+s.store+'</b></td><td>'+s.bins+'</td><td>'+s.weight.toLocaleString()+'</td><td>'+s.tons.toFixed(1)+'</td><td>'+s.avgBin.toFixed(0)+' lbs</td><td>'+diffTag+'</td><td>'+s.loadCount+'</td><td>'+binsPerLoad+'</td></tr>';
+  }).join('');
+
+  // Bins per store chart
+  kill('binsPerStore');
+  var stBins=stByBins.slice(0,25);
+  charts['binsPerStore']=new Chart(document.getElementById('chBinsPerStore'),{
+    type:'bar',data:{labels:stBins.map(function(s){return s.store;}),datasets:[{label:'Bins',data:stBins.map(function(s){return s.bins;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,300,0);g.addColorStop(0,C.dkA);g.addColorStop(1,C.lt);return g;},borderColor:C.dk,borderWidth:0,borderRadius:5,datalabels:dlBarH(C.dk)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
+  // Avg bin weight chart
+  kill('avgBinWt');
+  var stAvg=st.slice().sort(function(a,b){return b.avgBin-a.avgBin;}).slice(0,25);
+  charts['avgBinWt']=new Chart(document.getElementById('chAvgBinWeight'),{
+    type:'bar',data:{labels:stAvg.map(function(s){return s.store;}),datasets:[{label:'Avg lbs/bin',data:stAvg.map(function(s){return s.avgBin;}),backgroundColor:stAvg.map(function(s){return s.avgBin>=allAvgBin?'rgba(46,158,107,.5)':'rgba(214,69,69,.4)';}),borderColor:stAvg.map(function(s){return s.avgBin>=allAvgBin?C.grn:C.red;}),borderWidth:1,borderRadius:5,datalabels:dlBarH(C.dk)}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},annotation:{}},scales:{x:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y:{grid:{display:false}}}}
+  });
+
   // Weight ranking
   document.getElementById('rankWeight').innerHTML=st.map(function(s,i){
     var pct=(s.weight/maxW*100).toFixed(0);
@@ -1501,7 +1540,7 @@ function buildPDF(ai){
     return y;
   }
 
-  var TP=6; // total pages
+  var TP=7; // total pages
 
   // ================================================================
   // PAGE 1 - COVER
@@ -1653,9 +1692,43 @@ function buildPDF(ai){
   }
 
   // ================================================================
-  // PAGE 5 - STORE RANKINGS
+  // ================================================================
+  // PAGE 5 - STORE BIN EFFICIENCY
   // ================================================================
   doc.addPage();header(5,TP);footer();
+  y=22;
+
+  var allAvgBinPDF=filtered.length>0?filtered.reduce(function(a,r){return a+r.weight;},0)/filtered.length:0;
+  y=secBar(y,'Store Bin Efficiency Report','Bins collected and avg weight by store');
+
+  kpiBox(ML,y,(PW-8)/3,'Program Avg Bin Weight',allAvgBinPDF.toFixed(0)+' lbs','across all stores',dnDark);
+  kpiBox(ML+(PW-8)/3+4,y,(PW-8)/3,'Total Bins',filtered.length+'','all stores combined',dnLight);
+  kpiBox(ML+2*((PW-8)/3+4),y,(PW-8)/3,'Active Stores',pdfIdentStores.length,pdfUnidBins>0?pdfUnidBins+' unidentified':'all identified',amber);
+  y+=28;
+
+  var stByBinsPDF=stores.slice().sort(function(a,b){return b.bins-a.bins;});
+  var beW=[28,16,24,20,22,22,18,PW-28-16-24-20-22-22-18];
+  y=tblRow(y,['Store','Bins','Total lbs','Tons','Avg Bin','vs Avg','Loads','Bins/Load'],beW,true,false);
+  stByBinsPDF.slice(0,25).forEach(function(s,i){
+    if(y>H-25){doc.addPage();header(5,TP);footer();y=22;y=tblRow(y,['Store','Bins','Total lbs','Tons','Avg Bin','vs Avg','Loads','Bins/Load'],beW,true,false);}
+    var diff=allAvgBinPDF>0?((s.avgBin-allAvgBinPDF)/allAvgBinPDF*100).toFixed(0):'0';
+    var diffStr=parseInt(diff)>=0?'+'+diff+'%':diff+'%';
+    var bpl=s.loadCount>0?(s.bins/s.loadCount).toFixed(1):'--';
+    y=tblRow(y,[s.store,s.bins,s.weight.toLocaleString(),s.tons.toFixed(1),s.avgBin.toFixed(0)+' lbs',diffStr,s.loadCount,bpl],beW,false,i%2===0);
+  });
+
+  if(y<H-50){
+    y+=4;
+    var binNote='This report shows how efficiently each Target store fills its organics bins. The program-wide average bin weight is '+allAvgBinPDF.toFixed(0)+' lbs. ';
+    binNote+='Stores with above-average bin weights are maximizing container utilization, while stores below average may benefit from staff training on proper bin filling or adjustments to collection frequency. ';
+    if(pdfUnidBins>0)binNote+=pdfUnidBins+' bins are currently tagged as unidentified (store code 9999) and are excluded from store-level efficiency analysis until assigned.';
+    y=calloutBox(y,binNote,amber);
+  }
+
+  // ================================================================
+  // PAGE 6 - STORE RANKINGS
+  // ================================================================
+  doc.addPage();header(6,TP);footer();
   y=22;
 
   y=secBar(y,'Store Performance Rankings','By total weight');
@@ -1663,7 +1736,7 @@ function buildPDF(ai){
   var stW=[12,22,16,16,28,20,26,PW-12-22-16-16-28-20-26];
   y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);
   stores.slice(0,30).forEach(function(s,i){
-    if(y>H-25){doc.addPage();header(5,TP);footer();y=22;y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);}
+    if(y>H-25){doc.addPage();header(6,TP);footer();y=22;y=tblRow(y,['#','Store','Bins','Loads','Total lbs','Tons','GHG'],stW,true,false);}
     var ss=calc(s.tons);
     y=tblRow(y,[i+1,s.store,s.bins,s.loadCount,s.weight.toLocaleString(),s.tons.toFixed(1),ss.ghg.toFixed(2)],stW,false,i%2===0);
   });
@@ -1672,9 +1745,9 @@ function buildPDF(ai){
   if(y<H-80){y+=4;y=addChart(y,'chGHGStore',50,'CO2e Avoided by Store');}
 
   // ================================================================
-  // PAGE 6 - CARBON & FREIGHT
+  // PAGE 7 - CARBON & FREIGHT
   // ================================================================
-  doc.addPage();header(6,TP);footer();
+  doc.addPage();header(7,TP);footer();
   y=22;
 
   y=secBar(y,'Carbon Content Analysis','150,000 ppm | 15% of total weight');

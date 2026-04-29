@@ -511,7 +511,7 @@ tr:hover td{background:#F6F8FA}
 <footer class="ftr"><b>Denali</b> · Target Midwest Organics Program · Confidential · Prepared by VIRESCO AD LLC</footer>
 
 <script>
-var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=143;
+var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=162;
 
 // Sustainability conversion factors
 var SF={
@@ -1073,7 +1073,7 @@ function renderOperations(){
   // === FREIGHT COST ANALYSIS ===
   var RATE=600; // $/load
   var TARGET_EFF=0.95;
-  var OPT_BINS=Math.floor(MAX_BINS*TARGET_EFF); // 136
+  var OPT_BINS=Math.floor(MAX_BINS*TARGET_EFF); // 153
 
   var totalBinsAll=loads.reduce(function(s,l){return s+l.bins;},0);
   var currentLoads=loads.length;
@@ -1391,7 +1391,7 @@ function gatherAIAnalysis(){
   sust+='These metrics position the program as a high-impact sustainability initiative that directly supports both Target\'s corporate ESG commitments and Denali\'s mission to replenish the earth through organic waste repurposing.';
 
   // ---- OPERATIONAL ANALYSIS ----
-  var ops='Across '+loads.length+' loads during the period, average truck utilization reached '+avgEff.toFixed(1)+'% of the 143-bin maximum capacity ('+avgBinsLoad.toFixed(0)+' bins per load), which is '+effRating+' relative to the 95% optimization target. ';
+  var ops='Across '+loads.length+' loads during the period, average truck utilization reached '+avgEff.toFixed(1)+'% of the 162-bin maximum capacity ('+avgBinsLoad.toFixed(0)+' bins per load), which is '+effRating+' relative to the 95% optimization target. ';
   ops+=loadsAbove85+' of '+loads.length+' loads ('+((loadsAbove85/loads.length)*100).toFixed(0)+'%) achieved the 85% efficiency threshold';
   if(loadsBelow60>0)ops+=', while '+loadsBelow60+' load'+(loadsBelow60>1?'s':'')+' fell below 60% utilization, indicating opportunities for route consolidation';
   ops+='. ';
@@ -1595,7 +1595,7 @@ function buildPDF(ai){
   var pdfUnidBins=filtered.filter(function(r){return r.store==='9999';}).length;
   kpiBox(ML+2*(kw+4),y,kw,'Active Stores',pdfIdentStores.length,pdfUnidBins>0?pdfUnidBins+' bins unidentified':'all stores identified',dnLight);
   y+=26;
-  kpiBox(ML,y,kw,'Avg Load Efficiency',avgEff.toFixed(0)+'%','143 max bins/truck',amber);
+  kpiBox(ML,y,kw,'Avg Load Efficiency',avgEff.toFixed(0)+'%','162 max bins/truck',amber);
   kpiBox(ML+kw+4,y,kw,'Avg Tons / Week',fmt(avgTonsWk,1),'Low: '+fmt(lowWk,1)+' | High: '+fmt(highWk,1),dnDark);
   kpiBox(ML+2*(kw+4),y,kw,'Annualized Projection',fmt(annTons,0)+' tons','12-month extrapolation',dnLight);
   y+=30;
@@ -1668,7 +1668,7 @@ function buildPDF(ai){
 
   var avgStoresL=loads.length>0?loads.reduce(function(a,l){return a+l.storeCount;},0)/loads.length:0;
   kpiBox(ML,y,kw,'Total Loads',loads.length,'in period',dnDark);
-  kpiBox(ML+kw+4,y,kw,'Avg Bins/Load',avgBinsLoad.toFixed(0),'of 143 capacity',dnLight);
+  kpiBox(ML+kw+4,y,kw,'Avg Bins/Load',avgBinsLoad.toFixed(0),'of 162 capacity',dnLight);
   kpiBox(ML+2*(kw+4),y,kw,'Avg Efficiency',avgEff.toFixed(1)+'%',avgEff>=85?'On target':'Below 85% target',avgEff>=85?green:amber);
   y+=28;
 
@@ -1794,7 +1794,7 @@ function buildPDF(ai){
   if(y<H-25){
     rgb(txtM);setF('i',6);
     doc.text('* Freight rate: $600/load standard route (Consolidation warehouse to Turtle Lake, WI)',ML,y+4);
-    doc.text('* Optimized at 95% capacity = '+OPT_BINS+' bins per truck (143 max)',ML,y+8);
+    doc.text('* Optimized at 95% capacity = '+OPT_BINS+' bins per truck (162 max)',ML,y+8);
     doc.text('* Sustainability factors: CARB methodology (0.62 tCO2e/ton), EPA equivalency factors',ML,y+12);
   }
 

@@ -255,21 +255,21 @@ tr:hover td{background:#F6F8FA}
 
     <!-- SUSTAINABILITY -->
     <div class="page" id="pg-sustainability">
-      <div class="sec"><div class="sec-t">Sustainability Impact Report</div><div class="sec-s">EPA standard factors · 60% digestor efficiency · CARB methodology (0.62 tCO₂e/ton)</div></div>
+      <div class="sec"><div class="sec-t">Sustainability Impact Report</div><div class="sec-s">EPA standard factors · 72% digestor efficiency · CARB methodology (0.62 Tons of CO2e/ton)</div></div>
       <div class="grid g3" style="margin-bottom:14px" id="susKpis"></div>
       <div class="grid g2" style="margin-bottom:14px">
         <div class="card">
           <div class="card-t">YTD Sustainability Summary</div>
           <div id="susSummary"></div>
         </div>
-        <div class="card"><div class="card-t">GHG Avoided by Month (tCO₂e)</div><div class="ch-wrap"><canvas id="chGHG"></canvas></div></div>
+        <div class="card"><div class="card-t">GHG Avoided by Month (Tons of CO2e)</div><div class="ch-wrap"><canvas id="chGHG"></canvas></div></div>
       </div>
       <div class="grid g2" style="margin-bottom:14px">
         <div class="card"><div class="card-t">Biogas Yield & Energy Generated</div><div class="ch-wrap"><canvas id="chBioEnergy"></canvas></div></div>
         <div class="card"><div class="card-t">Real-World Equivalents</div><div class="ch-wrap"><canvas id="chEquiv"></canvas></div></div>
       </div>
       <div class="grid g2" style="margin-bottom:14px">
-        <div class="card"><div class="card-t">CO₂e Avoided by Store</div><div class="ch-wrap tall"><canvas id="chGHGStore"></canvas></div></div>
+        <div class="card"><div class="card-t">CO2e Avoided by Store</div><div class="ch-wrap tall"><canvas id="chGHGStore"></canvas></div></div>
         <div class="card">
           <div class="card-t">Top Carbon Contributors</div>
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(43,91,138,.06),rgba(104,188,212,.06));border-radius:8px">
@@ -437,11 +437,11 @@ tr:hover td{background:#F6F8FA}
         </div>
 
         <div class="page" id="pg-lo-sustainability">
-          <div class="sec"><div class="sec-t">Sustainability Impact — Loose Organics</div><div class="sec-s">EPA standard factors · 60% digestor efficiency</div></div>
+          <div class="sec"><div class="sec-t">Sustainability Impact — Loose Organics</div><div class="sec-s">EPA standard factors · 72% digestor efficiency</div></div>
           <div class="grid g3" style="margin-bottom:14px" id="loSusKpis"></div>
           <div class="grid g2" style="margin-bottom:14px">
             <div class="card"><div class="card-t">YTD Sustainability Summary</div><div id="loSusSummary"></div></div>
-            <div class="card"><div class="card-t">GHG Avoided by Month (tCO2e)</div><div class="ch-wrap"><canvas id="loChGHG"></canvas></div></div>
+            <div class="card"><div class="card-t">GHG Avoided by Month (Tons of CO2e)</div><div class="ch-wrap"><canvas id="loChGHG"></canvas></div></div>
           </div>
           <div class="grid g2">
             <div class="card"><div class="card-t">Biogas & Energy by Month</div><div class="ch-wrap"><canvas id="loChBioEnergy"></canvas></div></div>
@@ -517,7 +517,7 @@ var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=162;
 var SF={
   ghg:0.62,         // tCO2e per ton
   biogas_m:100,     // m3 biogas per ton (base)
-  biogas_eff:0.6,   // 60% methane capture
+  biogas_eff:0.72,  // 72% digestor efficiency
   m3_to_mmbtu:0.03663, // m3 CH4 to MMBtu (35.3147 SCF/m3 * 0.001037 MMBtu/SCF)
   energy_eff:0.4,   // 40% biogas-to-energy
   energy_mult:10,   // multiplier
@@ -696,7 +696,12 @@ function applyF(){
   else if(curP==='ytd'){var ys=new Date(now.getFullYear(),0,1);data=data.filter(function(r){return r.date>=ys&&r.date<=now;});}
   filtered=data;
   var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
-  document.getElementById('periodLabel').textContent=pl[curP]+' — '+filtered.length+' bins';
+  var periodDate='';
+  if(curP==='mtd'){var ms=new Date(now.getFullYear(),now.getMonth(),1);var me=new Date(now.getFullYear(),now.getMonth()+1,0);periodDate=ms.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' - '+me.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  else if(curP==='qtd'){var qs2=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);var qe=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3+3,0);periodDate=qs2.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' - '+qe.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  else if(curP==='ytd'){periodDate='Jan 1 - Dec 31, '+now.getFullYear();}
+  else if(filtered.length>0){periodDate=filtered[0].date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+filtered[filtered.length-1].date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  document.getElementById('periodLabel').textContent=pl[curP]+(periodDate?' ('+periodDate+')':'')+' — '+filtered.length+' bins';
   render();
 }
 
@@ -811,7 +816,7 @@ function renderOverview(){
   document.getElementById('kpiRow').innerHTML=
     kpiHTML(IC.scale,bB,cB,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW))+
     kpiHTML(IC.cube,bT,cT,'Total Bins',fmt(totalBins),loads.length+' loads')+
-    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(sus.ghg,1),'tCO₂e')+
+    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(sus.ghg,1),'Tons of CO2e')+
     kpiHTML(IC.pin,bB,cB,'Active Stores',identifiedStores.length,(unidCount>0?unidCount+' bins unidentified':'all identified'))+
     kpiHTML(IC.gauge,bA,cA,'Avg Load Efficiency',avgEff.toFixed(0)+'%',fmt(MAX_BINS)+' max bins')+
     kpiHTML(IC.trend,bT,cT,'Avg Tons / Week',fmt(avgTonsWk,1),'↓ '+fmt(lowWk,1)+' low · ↑ '+fmt(highWk,1)+' high');
@@ -847,7 +852,7 @@ function renderOverview(){
   kill('monthSus');
   charts['monthSus']=new Chart(document.getElementById('chMonthSus'),{
     type:'line',data:{labels:mo.map(function(m){return m.label;}),datasets:[
-      {label:'GHG Avoided (tCO₂e)',data:mo.map(function(m){return calc(m.tons).ghg;}),borderColor:C.p1,backgroundColor:C.p1A,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:C.p1,pointBorderWidth:2,borderWidth:2.5,datalabels:dlLine(C.p1)},
+      {label:'GHG Avoided (Tons of CO2e)',data:mo.map(function(m){return calc(m.tons).ghg;}),borderColor:C.p1,backgroundColor:C.p1A,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:C.p1,pointBorderWidth:2,borderWidth:2.5,datalabels:dlLine(C.p1)},
       {label:'Households Powered',data:mo.map(function(m){return calc(m.tons).hh;}),borderColor:C.teal,backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:C.teal,pointBorderWidth:2,borderWidth:2.5,yAxisID:'y1',datalabels:dlLine(C.teal)}
     ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},y1:{position:'right',beginAtZero:true,grid:{display:false}},x:{grid:{display:false}}}}
   });
@@ -889,7 +894,7 @@ function renderSustainability(){
   var totalW=0;filtered.forEach(function(r){totalW+=r.weight;});
   var tons=totalW/2000;var s=calc(tons);
   var kpis=[
-    {l:'GHG Avoided',v:fmt(s.ghg,1),s:'tCO₂e'},
+    {l:'GHG Avoided',v:fmt(s.ghg,1),s:'Tons of CO2e'},
     {l:'Lbs of Carbon',v:fmt(s.carbonLbs,0),s:'at 150K ppm'},
     {l:'Biogas Yield',v:fmt(s.biogas,0),s:'MMBtu'},
     {l:'Energy Generated',v:fmt(s.energy,0),s:'kWh'},
@@ -907,7 +912,7 @@ function renderSustainability(){
   var bR='rgba(232,131,107,.1)',cR='#C85A42';
   var annTons=tons>0?tons/Math.max(1,Math.ceil((filtered[filtered.length-1].date-filtered[0].date)/86400000))*365:0;
   document.getElementById('susKpis').innerHTML=
-    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO₂e')+
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e')+
     kpiHTML(IC.atom,bB,cB,'Lbs of Carbon',fmt(s.carbonLbs,0),'at 150K ppm')+
     kpiHTML(IC.flame,bR,cR,'Biogas Yield',fmt(s.biogas,0),'MMBtu')+
     kpiHTML(IC.bolt,bA,cA,'Energy Generated',fmt(s.energy,0),'kWh')+
@@ -922,7 +927,7 @@ function renderSustainability(){
   var rows=[
     {m:'Total Tons of Organics',v:tons.toFixed(1),u:'Tons'},
     {m:'Lbs of Carbon (150K ppm)',v:fmt(s.carbonLbs),u:'lbs'},
-    {m:'GHG Avoided',v:s.ghg.toFixed(1),u:'tCO₂e'},
+    {m:'GHG Avoided',v:s.ghg.toFixed(1),u:'Tons of CO2e'},
     {m:'Biogas Yield from AD',v:fmt(s.biogas),u:'MMBtu'},
     {m:'Energy Generated',v:fmt(s.energy),u:'kWh'},
     {m:'Fertilizer Replacement (NPK)',v:fmt(s.npk),u:'kg'},
@@ -939,7 +944,7 @@ function renderSustainability(){
   var mo=aggMonths(filtered);
   kill('ghg');
   charts['ghg']=new Chart(document.getElementById('chGHG'),{
-    type:'bar',data:{labels:mo.map(function(m){return m.label;}),datasets:[{label:'tCO₂e',data:mo.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderColor:C.sage,borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+    type:'bar',data:{labels:mo.map(function(m){return m.label;}),datasets:[{label:'Tons of CO2e',data:mo.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderColor:C.sage,borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
 
   // Biogas + Energy
@@ -961,7 +966,7 @@ function renderSustainability(){
   var st=aggStores(filtered).slice(0,25);
   kill('ghgStore');
   charts['ghgStore']=new Chart(document.getElementById('chGHGStore'),{
-    type:'bar',data:{labels:st.map(function(s){return s.store;}),datasets:[{label:'tCO₂e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+    type:'bar',data:{labels:st.map(function(s){return s.store;}),datasets:[{label:'Tons of CO2e Avoided',data:st.map(function(s){return calc(s.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,320);g.addColorStop(0,C.p1);g.addColorStop(1,C.p3);return g;},borderColor:C.p1,borderWidth:0,borderRadius:5,datalabels:dlSmart(st.length,C.p1)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
 
   // Carbon total header
@@ -1230,7 +1235,7 @@ function renderStores(){
   }).join('');
 
   // Store summary table
-  document.getElementById('storeTH').innerHTML='<tr><th>Rank</th><th>Store</th><th>Bins</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>Avg Bin (lbs)</th><th>GHG (tCO₂e)</th><th>Households</th><th>Load Freq</th></tr>';
+  document.getElementById('storeTH').innerHTML='<tr><th>Rank</th><th>Store</th><th>Bins</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>Avg Bin (lbs)</th><th>GHG (Tons of CO2e)</th><th>Households</th><th>Load Freq</th></tr>';
   document.getElementById('storeTB').innerHTML=st.map(function(s,i){
     var sus=calc(s.tons);
     return '<tr><td><b>'+(i+1)+'</b></td><td>'+s.store+'</td><td>'+s.bins+'</td><td>'+s.loadCount+'</td><td>'+s.weight.toLocaleString()+'</td><td>'+s.tons.toFixed(1)+'</td><td>'+s.avgBin.toFixed(0)+'</td><td>'+sus.ghg.toFixed(2)+'</td><td>'+sus.hh.toFixed(2)+'</td><td>'+s.loadCount+'</td></tr>';
@@ -1371,9 +1376,14 @@ function gatherAIAnalysis(){
   var unidPctPDF=filtered.length>0?(unidCountPDF/filtered.length*100).toFixed(1):0;
   var identStoresPDF=stores.filter(function(st){return st.store!=='9999';});
 
-  // Date formatting
+  // Date formatting — use calendar period boundaries
   var d1=filtered[0].date;var d2=filtered[filtered.length-1].date;
-  var dateRange=d1.toLocaleDateString('en-US',{month:'long',day:'numeric'})+' through '+d2.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var now2=new Date();var calS,calE;
+  if(curP==='mtd'){calS=new Date(now2.getFullYear(),now2.getMonth(),1);calE=new Date(now2.getFullYear(),now2.getMonth()+1,0);}
+  else if(curP==='qtd'){calS=new Date(now2.getFullYear(),Math.floor(now2.getMonth()/3)*3,1);calE=new Date(now2.getFullYear(),Math.floor(now2.getMonth()/3)*3+3,0);}
+  else if(curP==='ytd'){calS=new Date(now2.getFullYear(),0,1);calE=new Date(now2.getFullYear(),11,31);}
+  else{calS=d1;calE=d2;}
+  var dateRange=calS.toLocaleDateString('en-US',{month:'long',day:'numeric'})+' through '+calE.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 
   // ---- EXECUTIVE SUMMARY ----
   var storeNote=identStoresPDF.length+' identified Target store locations';
@@ -1382,11 +1392,11 @@ function gatherAIAnalysis(){
     'Weekly collection volume demonstrated a '+trendDir+' trajectory, increasing from an average of '+fhAvg.toFixed(1)+' tons per week in the first half of the period to '+shAvg.toFixed(1)+' tons per week in the second half';
   if(trendPct>0)exec+=', representing a '+trendPct.toFixed(0)+'% improvement in throughput';
   exec+='. ';
-  exec+='All collected organics were transported to the VIRESCO anaerobic digestion facility in Turtle Lake, Wisconsin, where processing yielded '+fmt(s.ghg,1)+' tCO2e in verified greenhouse gas avoidance and '+fmt(s.energy)+' kWh of renewable energy generation. ';
+  exec+='All collected organics were transported to the VIRESCO anaerobic digestion facility in Turtle Lake, Wisconsin, where processing yielded '+fmt(s.ghg,1)+' Tons of CO2e in verified greenhouse gas avoidance and '+fmt(s.energy)+' kWh of renewable energy generation. ';
   exec+='At the current collection rate, the program is projected to divert approximately '+fmt(annTons,0)+' tons annually, establishing a significant and scalable organics diversion channel for the Denali-Target partnership across the Midwest corridor.';
 
   // ---- SUSTAINABILITY HIGHLIGHTS ----
-  var sust='The environmental impact of the program is substantial and measurable. Diverting '+tons.toFixed(1)+' tons of organic waste from landfill through anaerobic digestion avoided an estimated '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions';
+  var sust='The environmental impact of the program is substantial and measurable. Diverting '+tons.toFixed(1)+' tons of organic waste from landfill through anaerobic digestion avoided an estimated '+s.ghg.toFixed(1)+' tons of CO2 equivalent emissions';
   sust+=', an impact comparable to removing '+fmt(s.cars,1)+' passenger vehicles from the road for a full year or planting '+fmt(s.trees,0)+' mature trees. ';
   sust+='The digestion process generated '+fmt(s.biogas)+' MMBtu of methane-rich biogas, which was converted into '+fmt(s.energy)+' kWh of clean electricity — enough to power approximately '+s.hh.toFixed(1)+' average American households. ';
   sust+='Additionally, the process captured '+fmt(s.carbonLbs)+' pounds of organic carbon (at 150,000 ppm concentration) and produced '+fmt(s.npk)+' kg of NPK-rich digestate suitable for agricultural fertilizer replacement, closing the nutrient loop and reducing dependency on synthetic fertilizer inputs. ';
@@ -1446,7 +1456,14 @@ function buildPDF(ai){
   var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
   var periodStr=pl[curP]||'All Time';
   var d1=filtered[0].date,d2=filtered[filtered.length-1].date;
-  var dateRange=d1.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+d2.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  // Use calendar period boundaries for date range display
+  var now=new Date();
+  var calStart,calEnd;
+  if(curP==='mtd'){calStart=new Date(now.getFullYear(),now.getMonth(),1);calEnd=new Date(now.getFullYear(),now.getMonth()+1,0);}
+  else if(curP==='qtd'){calStart=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);calEnd=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3+3,0);}
+  else if(curP==='ytd'){calStart=new Date(now.getFullYear(),0,1);calEnd=new Date(now.getFullYear(),11,31);}
+  else{calStart=d1;calEnd=d2;}
+  var dateRange=calStart.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+calEnd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
   // Chart image captures — must show all pages temporarily to render canvases
   var chartImgs={};
@@ -1592,7 +1609,7 @@ function buildPDF(ai){
   // KPIs - 3x2 grid
   var kw=(PW-8)/3;
   kpiBox(ML,y,kw,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
-  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(sus.ghg,1),'tCO2e',green);
+  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(sus.ghg,1),'Tons of CO2e',green);
   var pdfIdentStores=stores.filter(function(st){return st.store!=='9999';});
   var pdfUnidBins=filtered.filter(function(r){return r.store==='9999';}).length;
   kpiBox(ML+2*(kw+4),y,kw,'Active Stores',pdfIdentStores.length,pdfUnidBins>0?pdfUnidBins+' bins unidentified':'all stores identified',dnLight);
@@ -1615,13 +1632,13 @@ function buildPDF(ai){
   doc.addPage();header(3,TP);footer();
   y=22;
 
-  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 60% Digestor Efficiency');
+  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
 
   // Sustainability table
   var sRows=[
     ['Total Tons of Organics',tons.toFixed(1),'Tons'],
     ['Lbs of Carbon (150K ppm)',fmt(sus.carbonLbs),'lbs'],
-    ['GHG Avoided',sus.ghg.toFixed(1),'tCO2e'],
+    ['GHG Avoided',sus.ghg.toFixed(1),'Tons of CO2e'],
     ['Biogas Yield from AD',fmt(sus.biogas),'MMBtu'],
     ['Energy Generated',fmt(sus.energy),'kWh'],
     ['Fertilizer Replacement (NPK)',fmt(sus.npk),'kg'],
@@ -1658,7 +1675,7 @@ function buildPDF(ai){
   y=calloutBox(y,ai.sust,green);
 
   // GHG chart
-  y=addChart(y,'chGHG',45,'GHG Avoided by Month (tCO2e)');
+  y=addChart(y,'chGHG',45,'GHG Avoided by Month (Tons of CO2e)');
 
   // ================================================================
   // PAGE 4 - OPERATIONS
@@ -1797,7 +1814,7 @@ function buildPDF(ai){
     rgb(txtM);setF('i',6);
     doc.text('* Freight rate: $600/load standard route (Consolidation warehouse to Turtle Lake, WI)',ML,y+4);
     doc.text('* Optimized at 95% capacity = '+OPT_BINS+' bins per truck (162 max)',ML,y+8);
-    doc.text('* Sustainability factors: CARB methodology (0.62 tCO2e/ton), EPA equivalency factors',ML,y+12);
+    doc.text('* Sustainability factors: CARB methodology (0.62 Tons of CO2e/ton), EPA equivalency factors',ML,y+12);
   }
 
   // ---- SAVE ----
@@ -1979,7 +1996,7 @@ function renderLoose(){
   document.getElementById('loKpiRow').innerHTML=
     kpiHTML(IC.scale,bB,cB,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW))+
     kpiHTML(IC.truck,bT,cT,'Total Loads',d.length,'deliveries')+
-    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.leaf,bG,cG,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e')+
     kpiHTML(IC.pin,bB,cB,'Active Customers',custs.length,'sources')+
     kpiHTML(IC.trend,bT,cT,'Avg Tons/Week',fmt(avgTonsWk,1),'weekly average')+
     kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh');
@@ -2017,7 +2034,7 @@ function renderLoose(){
 
   // Sustainability KPIs
   document.getElementById('loSusKpis').innerHTML=
-    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e')+
     kpiHTML(IC.atom,bB,cB,'Lbs of Carbon',fmt(s.carbonLbs,0),'at 150K ppm')+
     kpiHTML(IC.flame,'rgba(232,131,107,.1)','#C85A42','Biogas Yield',fmt(s.biogas,0),'MMBtu')+
     kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh')+
@@ -2028,13 +2045,13 @@ function renderLoose(){
     kpiHTML(IC.calendar,bT,cT,'Annualized',fmt(d.length>1?tons/Math.max(1,Math.ceil((d[d.length-1].date-d[0].date)/86400000))*365:0,0)+' tons','projected');
 
   // Sustainability summary
-  var susRows=[['Total Tons',tons.toFixed(1),'Tons'],['GHG Avoided',s.ghg.toFixed(1),'tCO2e'],['Biogas Yield',fmt(s.biogas),'MMBtu'],['Energy',fmt(s.energy),'kWh'],['NPK',fmt(s.npk),'kg'],['Households',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),''],['Trees',fmt(s.trees),'']];
+  var susRows=[['Total Tons',tons.toFixed(1),'Tons'],['GHG Avoided',s.ghg.toFixed(1),'Tons of CO2e'],['Biogas Yield',fmt(s.biogas),'MMBtu'],['Energy',fmt(s.energy),'kWh'],['NPK',fmt(s.npk),'kg'],['Households',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),''],['Trees',fmt(s.trees),'']];
   document.getElementById('loSusSummary').innerHTML=susRows.map(function(r){return'<div class="sus-row"><span class="sus-metric">'+r[0]+'</span><span><span class="sus-val">'+r[1]+'</span><span class="sus-unit">'+r[2]+'</span></span></div>';}).join('');
 
   // GHG by month
   loKill('loGHG');
   loCharts['loGHG']=new Chart(document.getElementById('loChGHG'),{
-    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:[{label:'tCO2e',data:months.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
+    type:'bar',data:{labels:months.map(function(m){return m.label;}),datasets:[{label:'Tons of CO2e',data:months.map(function(m){return calc(m.tons).ghg;}),backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,C.sage);g.addColorStop(1,C.teal);return g;},borderWidth:0,borderRadius:6,datalabels:dlBar(C.sage)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(48,69,92,.05)'}},x:{grid:{display:false}}}}
   });
 
   // Biogas + Energy
@@ -2064,7 +2081,7 @@ function renderLoose(){
   }).join('');
 
   // Customer table
-  document.getElementById('loCustTH').innerHTML='<tr><th>#</th><th>Customer</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>GHG (tCO2e)</th><th>Products</th></tr>';
+  document.getElementById('loCustTH').innerHTML='<tr><th>#</th><th>Customer</th><th>Loads</th><th>Total lbs</th><th>Tons</th><th>GHG (Tons of CO2e)</th><th>Products</th></tr>';
   document.getElementById('loCustTB').innerHTML=custs.map(function(c,i){
     var ss=calc(c.tons);
     return'<tr><td><b>'+(i+1)+'</b></td><td>'+c.customer+'</td><td>'+c.loads+'</td><td>'+c.weight.toLocaleString()+'</td><td>'+c.tons.toFixed(1)+'</td><td>'+ss.ghg.toFixed(2)+'</td><td>'+c.productCount+'</td></tr>';
@@ -2111,7 +2128,13 @@ function generateLoosePDF(){
   var trendPct=fhAvg>0?((shAvg-fhAvg)/fhAvg*100):0;
   var trendDir=trendPct>10?'strong upward':trendPct>0?'positive':trendPct>-10?'relatively stable':'declining';
   var d1=d[0].date,d2=d[d.length-1].date;
-  var dateRange=d1.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+d2.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  // Use calendar period boundaries
+  var now3=new Date();var loCalS,loCalE;
+  if(loCurP==='mtd'){loCalS=new Date(now3.getFullYear(),now3.getMonth(),1);loCalE=new Date(now3.getFullYear(),now3.getMonth()+1,0);}
+  else if(loCurP==='qtd'){loCalS=new Date(now3.getFullYear(),Math.floor(now3.getMonth()/3)*3,1);loCalE=new Date(now3.getFullYear(),Math.floor(now3.getMonth()/3)*3+3,0);}
+  else if(loCurP==='ytd'){loCalS=new Date(now3.getFullYear(),0,1);loCalE=new Date(now3.getFullYear(),11,31);}
+  else{loCalS=d1;loCalE=d2;}
+  var dateRange=loCalS.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' - '+loCalE.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   var topCusts=custs.slice(0,3).map(function(c){return c.customer+' ('+c.tons.toFixed(1)+' tons)';}).join(', ');
 
   // Capture charts
@@ -2170,7 +2193,7 @@ function generateLoosePDF(){
   var y=22;
   y=secBar(y,'Executive Summary',dateRange);
   kpiBox(ML,y,kw,'Total Tons',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
-  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(s.ghg,1),'tCO2e',green);
+  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e',green);
   kpiBox(ML+2*(kw+4),y,kw,'Active Customers',custs.length,'sources',dnLight);
   y+=26;
   kpiBox(ML,y,kw,'Total Loads',d.length,'deliveries',dnDark);
@@ -2189,17 +2212,17 @@ function generateLoosePDF(){
   // PAGE 3 - SUSTAINABILITY
   doc.addPage();header(3,TP);footer();
   y=22;
-  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 60% Digestor Efficiency');
-  var sRows=[['Total Tons',tons.toFixed(1),'Tons'],['Lbs of Carbon (150K ppm)',fmt(s.carbonLbs),'lbs'],['GHG Avoided',s.ghg.toFixed(1),'tCO2e'],['Biogas Yield',fmt(s.biogas),'MMBtu'],['Energy Generated',fmt(s.energy),'kWh'],['NPK Fertilizer',fmt(s.npk),'kg'],['Households Powered',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),'cars/yr'],['Trees Equivalent',fmt(s.trees),'trees/yr'],['Miles Not Driven',fmt(s.miles),'miles']];
+  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
+  var sRows=[['Total Tons',tons.toFixed(1),'Tons'],['Lbs of Carbon (150K ppm)',fmt(s.carbonLbs),'lbs'],['GHG Avoided',s.ghg.toFixed(1),'Tons of CO2e'],['Biogas Yield',fmt(s.biogas),'MMBtu'],['Energy Generated',fmt(s.energy),'kWh'],['NPK Fertilizer',fmt(s.npk),'kg'],['Households Powered',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),'cars/yr'],['Trees Equivalent',fmt(s.trees),'trees/yr'],['Miles Not Driven',fmt(s.miles),'miles']];
   var sw=[80,40,PW-80-40];
   y=tblRow(y,['Metric','Value','Units'],sw,true,false);
   sRows.forEach(function(r,i){y=tblRow(y,r,sw,false,i%2===0);});
   y+=6;
 
-  var sustText='Diverting '+tons.toFixed(1)+' tons of organic waste from landfill through anaerobic digestion avoided an estimated '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions, comparable to removing '+fmt(s.cars,1)+' passenger vehicles from the road for a full year or planting '+fmt(s.trees,0)+' trees. The process generated '+fmt(s.biogas)+' MMBtu of biogas and '+fmt(s.energy)+' kWh of renewable energy, enough to power '+s.hh.toFixed(1)+' average households. Additionally, '+fmt(s.carbonLbs)+' pounds of organic carbon were captured and '+fmt(s.npk)+' kg of NPK-rich digestate was produced for agricultural fertilizer replacement.';
+  var sustText='Diverting '+tons.toFixed(1)+' tons of organic waste from landfill through anaerobic digestion avoided an estimated '+s.ghg.toFixed(1)+' tons of CO2 equivalent emissions, comparable to removing '+fmt(s.cars,1)+' passenger vehicles from the road for a full year or planting '+fmt(s.trees,0)+' trees. The process generated '+fmt(s.biogas)+' MMBtu of biogas and '+fmt(s.energy)+' kWh of renewable energy, enough to power '+s.hh.toFixed(1)+' average households. Additionally, '+fmt(s.carbonLbs)+' pounds of organic carbon were captured and '+fmt(s.npk)+' kg of NPK-rich digestate was produced for agricultural fertilizer replacement.';
   y=calloutBox(y,sustText,green);
   y+=2;
-  y=addChart(y,'loChGHG',45,'GHG Avoided by Month (tCO2e)');
+  y=addChart(y,'loChGHG',45,'GHG Avoided by Month (Tons of CO2e)');
 
   // PAGE 4 - CUSTOMER RANKINGS
   doc.addPage();header(4,TP);footer();
@@ -2240,7 +2263,7 @@ function renderSummary(){
     kpiHTML(IC.scale,bB,cB,'Total Tons (All)',fmt(tons,1),'lbs: '+fmt(totalW))+
     kpiHTML(IC.cube,bT,cT,'Target Tons',fmt(tTons,1),tLoads+' loads')+
     kpiHTML(IC.truck,bB,cB,'Loose Organics Tons',fmt(lTons,1),lLoads+' loads')+
-    kpiHTML(IC.leaf,bG,cG,'Total GHG Avoided',fmt(s.ghg,1),'tCO2e')+
+    kpiHTML(IC.leaf,bG,cG,'Total GHG Avoided',fmt(s.ghg,1),'Tons of CO2e')+
     kpiHTML(IC.house,bT,cT,'Households Powered',fmt(s.hh,1),'combined')+
     kpiHTML(IC.car,bB,cB,'Cars Off Road',fmt(s.cars,1),'combined');
 
@@ -2267,7 +2290,7 @@ function renderSummary(){
 
   // Sustainability KPIs
   document.getElementById('sumSusKpis').innerHTML=
-    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'tCO2e combined')+
+    kpiHTML(IC.cloud,bG,cG,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e combined')+
     kpiHTML(IC.flame,'rgba(232,131,107,.1)','#C85A42','Biogas Yield',fmt(s.biogas,0),'MMBtu')+
     kpiHTML(IC.bolt,'rgba(232,169,77,.1)','#D4880F','Energy Generated',fmt(s.energy,0),'kWh')+
     kpiHTML(IC.plant,bG,cG,'NPK Fertilizer',fmt(s.npk,0),'kg')+
@@ -2279,7 +2302,7 @@ function renderSummary(){
     ['Total Tons (Combined)',tons.toFixed(1),'Tons'],
     ['Target Program',tTons.toFixed(1),'Tons'],
     ['Loose Organics',lTons.toFixed(1),'Tons'],
-    ['GHG Avoided',s.ghg.toFixed(1),'tCO2e'],
+    ['GHG Avoided',s.ghg.toFixed(1),'Tons of CO2e'],
     ['Biogas Yield',fmt(s.biogas),'MMBtu'],
     ['Energy Generated',fmt(s.energy),'kWh'],
     ['Households Powered',s.hh.toFixed(1),''],
@@ -2380,7 +2403,7 @@ function generateSummaryPDF(){
   y=secBar(y,'Combined Program Overview',dateRange);
 
   kpiBox(ML,y,kw,'Total Tons (All)',fmt(tons,1),'lbs: '+fmt(totalW),dnDark);
-  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(s.ghg,1),'tCO2e combined',green);
+  kpiBox(ML+kw+4,y,kw,'GHG Avoided',fmt(s.ghg,1),'Tons of CO2e combined',green);
   kpiBox(ML+2*(kw+4),y,kw,'Energy Generated',fmt(s.energy,0)+' kWh','renewable',dnLight);
   y+=26;
   kpiBox(ML,y,kw,'Target Program',fmt(tTons,1)+' tons',tLoads+' loads | '+tStores+' stores',dnDark);
@@ -2393,7 +2416,7 @@ function generateSummaryPDF(){
   var lPct=tons>0?(lTons/tons*100).toFixed(0):0;
   var execText='Across both the Target bin collection program and the loose organics intake stream, the Denali partnership processed a combined '+fmt(totalW)+' pounds ('+tons.toFixed(1)+' tons) of organic material during the reporting period of '+dateRange+'. ';
   execText+='The Target program contributed '+tTons.toFixed(1)+' tons ('+tPct+'% of total volume) across '+tLoads+' consolidated truckloads from '+tStores+' store locations, while the loose organics stream delivered '+lTons.toFixed(1)+' tons ('+lPct+'%) through '+lLoads+' loads from '+lCusts+' customer sources. ';
-  execText+='Combined, this diversion effort avoided an estimated '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions, generated '+fmt(s.energy)+' kWh of renewable energy, and produced '+fmt(s.npk)+' kg of NPK-rich digestate through anaerobic digestion at the VIRESCO facility in Turtle Lake, Wisconsin. ';
+  execText+='Combined, this diversion effort avoided an estimated '+s.ghg.toFixed(1)+' tons of CO2 equivalent emissions, generated '+fmt(s.energy)+' kWh of renewable energy, and produced '+fmt(s.npk)+' kg of NPK-rich digestate through anaerobic digestion at the VIRESCO facility in Turtle Lake, Wisconsin. ';
   execText+='At current collection rates, the partnership is projected to process approximately '+fmt(annTons,0)+' tons annually, reinforcing its position as a scalable and impactful organics diversion channel for the Midwest corridor.';
   y=calloutBox(y,execText,dnDark);
   y+=2;
@@ -2410,7 +2433,7 @@ function generateSummaryPDF(){
   y=tblRow(y,['Total Tons',tTons.toFixed(1),lTons.toFixed(1),tons.toFixed(1)],cmpW,false,true);
   y=tblRow(y,['Total lbs',fmt(tTotalW),fmt(lTotalW),fmt(totalW)],cmpW,false,false);
   y=tblRow(y,['Load Count',tLoads,lLoads,tLoads+lLoads],cmpW,false,true);
-  y=tblRow(y,['GHG Avoided (tCO2e)',ts.ghg.toFixed(1),ls.ghg.toFixed(1),s.ghg.toFixed(1)],cmpW,false,false);
+  y=tblRow(y,['GHG Avoided (Tons of CO2e)',ts.ghg.toFixed(1),ls.ghg.toFixed(1),s.ghg.toFixed(1)],cmpW,false,false);
   y=tblRow(y,['Biogas (MMBtu)',fmt(ts.biogas),fmt(ls.biogas),fmt(s.biogas)],cmpW,false,true);
   y=tblRow(y,['Energy (kWh)',fmt(ts.energy),fmt(ls.energy),fmt(s.energy)],cmpW,false,false);
   y=tblRow(y,['NPK Fertilizer (kg)',fmt(ts.npk),fmt(ls.npk),fmt(s.npk)],cmpW,false,true);
@@ -2426,7 +2449,7 @@ function generateSummaryPDF(){
   // PAGE 4 - SUSTAINABILITY
   doc.addPage();header(4,TP);footer();
   y=22;
-  y=secBar(y,'Combined Sustainability Impact','EPA Standard Factors | 60% Digestor Efficiency');
+  y=secBar(y,'Combined Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
 
   // Equivalents boxes
   var eqPairs=[
@@ -2446,18 +2469,18 @@ function generateSummaryPDF(){
   });
   y+=42;
 
-  var sustText='The combined Denali organics partnership diverted '+tons.toFixed(1)+' tons of organic waste from landfill, avoiding '+s.ghg.toFixed(1)+' metric tons of CO2 equivalent emissions through anaerobic digestion. This environmental impact is equivalent to removing '+fmt(s.cars,1)+' passenger vehicles from the road, planting '+fmt(s.trees,0)+' trees, or powering '+s.hh.toFixed(1)+' average American households with renewable energy. ';
+  var sustText='The combined Denali organics partnership diverted '+tons.toFixed(1)+' tons of organic waste from landfill, avoiding '+s.ghg.toFixed(1)+' tons of CO2 equivalent emissions through anaerobic digestion. This environmental impact is equivalent to removing '+fmt(s.cars,1)+' passenger vehicles from the road, planting '+fmt(s.trees,0)+' trees, or powering '+s.hh.toFixed(1)+' average American households with renewable energy. ';
   sustText+='The digestion process yielded '+fmt(s.biogas)+' MMBtu of biogas and '+fmt(s.energy)+' kWh of clean electricity, while capturing '+fmt(s.carbonLbs)+' pounds of organic carbon and producing '+fmt(s.npk)+' kg of nutrient-rich digestate for agricultural use. ';
   sustText+='These results demonstrate the tangible environmental and economic value of the partnership, with the Target bin program and loose organics stream working as complementary diversion channels that maximize throughput at the Turtle Lake facility.';
   y=calloutBox(y,sustText,green);
   y+=2;
-  y=addChart(y,'sumChGHG',50,'GHG Avoided by Program (tCO2e)');
+  y=addChart(y,'sumChGHG',50,'GHG Avoided by Program (Tons of CO2e)');
 
   // Footnotes
   if(y<H-20){
     rgb(txtM);setF('i',6);
-    doc.text('* Sustainability factors: CARB methodology (0.62 tCO2e/ton), EPA equivalency factors',ML,y+4);
-    doc.text('* Biogas: 100 m3/ton x 60% x 0.03663 MMBtu/m3 methane capture | Energy: 40% biogas-to-energy conversion | NPK: 15 kg/ton',ML,y+8);
+    doc.text('* Sustainability factors: CARB methodology (0.62 Tons of CO2e/ton), EPA equivalency factors',ML,y+4);
+    doc.text('* Biogas: 100 m3/ton x 72% x 0.03663 MMBtu/m3 methane capture | Energy: 40% biogas-to-energy conversion | NPK: 15 kg/ton',ML,y+8);
   }
 
   doc.save('Denali_Combined_Summary_'+new Date().toISOString().split('T')[0]+'.pdf');

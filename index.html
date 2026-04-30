@@ -255,7 +255,7 @@ tr:hover td{background:#F6F8FA}
 
     <!-- SUSTAINABILITY -->
     <div class="page" id="pg-sustainability">
-      <div class="sec"><div class="sec-t">Sustainability Impact Report</div><div class="sec-s">EPA standard factors · 72% digestor efficiency · CARB methodology (0.62 Tons of CO2e/ton)</div></div>
+      <div class="sec"><div class="sec-t">Sustainability Impact Report</div><div class="sec-s">EPA standard factors · 73% digestor efficiency · CARB methodology (0.62 Tons of CO2e/ton)</div></div>
       <div class="grid g3" style="margin-bottom:14px" id="susKpis"></div>
       <div class="grid g2" style="margin-bottom:14px">
         <div class="card">
@@ -437,7 +437,7 @@ tr:hover td{background:#F6F8FA}
         </div>
 
         <div class="page" id="pg-lo-sustainability">
-          <div class="sec"><div class="sec-t">Sustainability Impact — Loose Organics</div><div class="sec-s">EPA standard factors · 72% digestor efficiency</div></div>
+          <div class="sec"><div class="sec-t">Sustainability Impact — Loose Organics</div><div class="sec-s">EPA standard factors · 73% digestor efficiency</div></div>
           <div class="grid g3" style="margin-bottom:14px" id="loSusKpis"></div>
           <div class="grid g2" style="margin-bottom:14px">
             <div class="card"><div class="card-t">YTD Sustainability Summary</div><div id="loSusSummary"></div></div>
@@ -517,7 +517,7 @@ var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=162;
 var SF={
   ghg:0.62,         // tCO2e per ton
   biogas_m:100,     // m3 biogas per ton (base)
-  biogas_eff:0.72,  // 72% digestor efficiency
+  biogas_eff:0.73,  // 73% digestor efficiency
   m3_to_mmbtu:0.03663, // m3 CH4 to MMBtu (35.3147 SCF/m3 * 0.001037 MMBtu/SCF)
   energy_eff:0.4,   // 40% biogas-to-energy
   energy_mult:10,   // multiplier
@@ -1632,7 +1632,7 @@ function buildPDF(ai){
   doc.addPage();header(3,TP);footer();
   y=22;
 
-  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
+  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 73% Digestor Efficiency');
 
   // Sustainability table
   var sRows=[
@@ -2212,7 +2212,7 @@ function generateLoosePDF(){
   // PAGE 3 - SUSTAINABILITY
   doc.addPage();header(3,TP);footer();
   y=22;
-  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
+  y=secBar(y,'Sustainability Impact','EPA Standard Factors | 73% Digestor Efficiency');
   var sRows=[['Total Tons',tons.toFixed(1),'Tons'],['Lbs of Carbon (150K ppm)',fmt(s.carbonLbs),'lbs'],['GHG Avoided',s.ghg.toFixed(1),'Tons of CO2e'],['Biogas Yield',fmt(s.biogas),'MMBtu'],['Energy Generated',fmt(s.energy),'kWh'],['NPK Fertilizer',fmt(s.npk),'kg'],['Households Powered',s.hh.toFixed(1),''],['Cars Off Road',s.cars.toFixed(1),'cars/yr'],['Trees Equivalent',fmt(s.trees),'trees/yr'],['Miles Not Driven',fmt(s.miles),'miles']];
   var sw=[80,40,PW-80-40];
   y=tblRow(y,['Metric','Value','Units'],sw,true,false);
@@ -2449,7 +2449,7 @@ function generateSummaryPDF(){
   // PAGE 4 - SUSTAINABILITY
   doc.addPage();header(4,TP);footer();
   y=22;
-  y=secBar(y,'Combined Sustainability Impact','EPA Standard Factors | 72% Digestor Efficiency');
+  y=secBar(y,'Combined Sustainability Impact','EPA Standard Factors | 73% Digestor Efficiency');
 
   // Equivalents boxes
   var eqPairs=[
@@ -2480,7 +2480,7 @@ function generateSummaryPDF(){
   if(y<H-20){
     rgb(txtM);setF('i',6);
     doc.text('* Sustainability factors: CARB methodology (0.62 Tons of CO2e/ton), EPA equivalency factors',ML,y+4);
-    doc.text('* Biogas: 100 m3/ton x 72% x 0.03663 MMBtu/m3 methane capture | Energy: 40% biogas-to-energy conversion | NPK: 15 kg/ton',ML,y+8);
+    doc.text('* Biogas: 100 m3/ton x 73% x 0.03663 MMBtu/m3 methane capture | Energy: 40% biogas-to-energy conversion | NPK: 15 kg/ton',ML,y+8);
   }
 
   doc.save('Denali_Combined_Summary_'+new Date().toISOString().split('T')[0]+'.pdf');

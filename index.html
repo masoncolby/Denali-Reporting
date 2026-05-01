@@ -1379,7 +1379,19 @@ function gatherAIAnalysis(){
   // Date formatting — use calendar period boundaries
   var d1=filtered[0].date;var d2=filtered[filtered.length-1].date;
   var now2=new Date();var calS,calE;
-  if(curP==='mtd'){calS=new Date(now2.getFullYear(),now2.getMonth(),1);calE=new Date(now2.getFullYear(),now2.getMonth()+1,0);}
+  var selMonth=document.getElementById('fMonth').value;
+  var selYear=document.getElementById('fYear').value;
+  // If a specific month is selected, use that month's calendar boundaries
+  if(selMonth!=='all'&&selYear!=='all'){
+    var sm=parseInt(selMonth),sy=parseInt(selYear);
+    calS=new Date(sy,sm,1);calE=new Date(sy,sm+1,0);
+  }else if(selMonth!=='all'){
+    var sm2=parseInt(selMonth),sy2=d2.getFullYear();
+    calS=new Date(sy2,sm2,1);calE=new Date(sy2,sm2+1,0);
+  }else if(selYear!=='all'){
+    var sy3=parseInt(selYear);
+    calS=new Date(sy3,0,1);calE=new Date(sy3,11,31);
+  }else if(curP==='mtd'){calS=new Date(now2.getFullYear(),now2.getMonth(),1);calE=new Date(now2.getFullYear(),now2.getMonth()+1,0);}
   else if(curP==='qtd'){calS=new Date(now2.getFullYear(),Math.floor(now2.getMonth()/3)*3,1);calE=new Date(now2.getFullYear(),Math.floor(now2.getMonth()/3)*3+3,0);}
   else if(curP==='ytd'){calS=new Date(now2.getFullYear(),0,1);calE=new Date(now2.getFullYear(),11,31);}
   else{calS=d1;calE=d2;}
@@ -1455,11 +1467,26 @@ function buildPDF(ai){
   var annSavings=freightSavings/daySpan*365;
   var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
   var periodStr=pl[curP]||'All Time';
+  if(pdfMonth!=='all'){
+    var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    periodStr=mn[parseInt(pdfMonth)]+(pdfYear!=='all'?' '+pdfYear:'');
+  }else if(pdfYear!=='all'){periodStr=pdfYear;}
   var d1=filtered[0].date,d2=filtered[filtered.length-1].date;
   // Use calendar period boundaries for date range display
   var now=new Date();
   var calStart,calEnd;
-  if(curP==='mtd'){calStart=new Date(now.getFullYear(),now.getMonth(),1);calEnd=new Date(now.getFullYear(),now.getMonth()+1,0);}
+  var pdfMonth=document.getElementById('fMonth').value;
+  var pdfYear=document.getElementById('fYear').value;
+  if(pdfMonth!=='all'&&pdfYear!=='all'){
+    var pm=parseInt(pdfMonth),py=parseInt(pdfYear);
+    calStart=new Date(py,pm,1);calEnd=new Date(py,pm+1,0);
+  }else if(pdfMonth!=='all'){
+    var pm2=parseInt(pdfMonth),py2=d2.getFullYear();
+    calStart=new Date(py2,pm2,1);calEnd=new Date(py2,pm2+1,0);
+  }else if(pdfYear!=='all'){
+    var py3=parseInt(pdfYear);
+    calStart=new Date(py3,0,1);calEnd=new Date(py3,11,31);
+  }else if(curP==='mtd'){calStart=new Date(now.getFullYear(),now.getMonth(),1);calEnd=new Date(now.getFullYear(),now.getMonth()+1,0);}
   else if(curP==='qtd'){calStart=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);calEnd=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3+3,0);}
   else if(curP==='ytd'){calStart=new Date(now.getFullYear(),0,1);calEnd=new Date(now.getFullYear(),11,31);}
   else{calStart=d1;calEnd=d2;}
@@ -2130,7 +2157,18 @@ function generateLoosePDF(){
   var d1=d[0].date,d2=d[d.length-1].date;
   // Use calendar period boundaries
   var now3=new Date();var loCalS,loCalE;
-  if(loCurP==='mtd'){loCalS=new Date(now3.getFullYear(),now3.getMonth(),1);loCalE=new Date(now3.getFullYear(),now3.getMonth()+1,0);}
+  var loSelMonth=document.getElementById('loFMonth').value;
+  var loSelYear=document.getElementById('loFYear').value;
+  if(loSelMonth!=='all'&&loSelYear!=='all'){
+    var lm=parseInt(loSelMonth),ly=parseInt(loSelYear);
+    loCalS=new Date(ly,lm,1);loCalE=new Date(ly,lm+1,0);
+  }else if(loSelMonth!=='all'){
+    var lm2=parseInt(loSelMonth),ly2=d2.getFullYear();
+    loCalS=new Date(ly2,lm2,1);loCalE=new Date(ly2,lm2+1,0);
+  }else if(loSelYear!=='all'){
+    var ly3=parseInt(loSelYear);
+    loCalS=new Date(ly3,0,1);loCalE=new Date(ly3,11,31);
+  }else if(loCurP==='mtd'){loCalS=new Date(now3.getFullYear(),now3.getMonth(),1);loCalE=new Date(now3.getFullYear(),now3.getMonth()+1,0);}
   else if(loCurP==='qtd'){loCalS=new Date(now3.getFullYear(),Math.floor(now3.getMonth()/3)*3,1);loCalE=new Date(now3.getFullYear(),Math.floor(now3.getMonth()/3)*3+3,0);}
   else if(loCurP==='ytd'){loCalS=new Date(now3.getFullYear(),0,1);loCalE=new Date(now3.getFullYear(),11,31);}
   else{loCalS=d1;loCalE=d2;}

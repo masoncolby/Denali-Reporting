@@ -1466,17 +1466,19 @@ function buildPDF(ai){
   var freightSavings=(loads.length-optLoads)*RATE;
   var annSavings=freightSavings/daySpan*365;
   var pl={mtd:'Month to Date',qtd:'Quarter to Date',ytd:'Year to Date',all:'All Time'};
+  var d1=filtered[0].date,d2=filtered[filtered.length-1].date;
+  // Read filter selections first
+  var now=new Date();
+  var pdfMonth=document.getElementById('fMonth').value;
+  var pdfYear=document.getElementById('fYear').value;
+  // Build period label
   var periodStr=pl[curP]||'All Time';
   if(pdfMonth!=='all'){
     var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
     periodStr=mn[parseInt(pdfMonth)]+(pdfYear!=='all'?' '+pdfYear:'');
   }else if(pdfYear!=='all'){periodStr=pdfYear;}
-  var d1=filtered[0].date,d2=filtered[filtered.length-1].date;
   // Use calendar period boundaries for date range display
-  var now=new Date();
   var calStart,calEnd;
-  var pdfMonth=document.getElementById('fMonth').value;
-  var pdfYear=document.getElementById('fYear').value;
   if(pdfMonth!=='all'&&pdfYear!=='all'){
     var pm=parseInt(pdfMonth),py=parseInt(pdfYear);
     calStart=new Date(py,pm,1);calEnd=new Date(py,pm+1,0);

@@ -508,7 +508,7 @@ tr:hover td{background:#F6F8FA}
       </div>
     </main>
   </div><!-- end prog-summary -->
-<footer class="ftr"><b>Denali</b> · Target Midwest Organics Program · Confidential · Prepared by VIRESCO AD LLC</footer>
+<footer class="ftr"><b>Denali</b> · Target Midwest Organics Program · Confidential · Prepared by VIRESCO</footer>
 
 <script>
 var raw=[],filtered=[],colMap={},curP='mtd',charts={},MAX_BINS=162;
@@ -1502,7 +1502,7 @@ function buildPDF(ai){
   function footer(){
     doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);
     rgb(txtM);setF('n',6.5);
-    doc.text('DENALI  |  Target Midwest Organics  |  Confidential  |  Prepared by VIRESCO AD LLC',W/2,H-9,{align:'center'});
+    doc.text('DENALI  |  Target Midwest Organics  |  Confidential  |  Prepared by VIRESCO',W/2,H-9,{align:'center'});
     doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});
   }
   function secBar(y,title,sub){
@@ -1594,7 +1594,7 @@ function buildPDF(ai){
   fill([38,56,72]);doc.roundedRect(W/2-50,H-55,100,30,2,2,'F');
   rgb([180,200,210]);setF('n',8);
   doc.text('Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-44,{align:'center'});
-  doc.text('Prepared by VIRESCO AD LLC',W/2,H-37,{align:'center'});
+  doc.text('Prepared by VIRESCO',W/2,H-37,{align:'center'});
   rgb(txtM);setF('i',7);
   doc.text('Confidential - For Authorized Recipients Only',W/2,H-30,{align:'center'});
 
@@ -2161,7 +2161,7 @@ function generateLoosePDF(){
   function rgb(c){doc.setTextColor(c[0],c[1],c[2]);}
   function fill(c){doc.setFillColor(c[0],c[1],c[2]);}
   function header(pg,total){fill(dnDeep);doc.rect(0,0,W,16,'F');rgb(dnLight);setF('b',12);doc.text('DENALI',ML,10.5);rgb(white);setF('n',7);doc.text('Loose Organics Program',ML+28,10.5);rgb(txtM);setF('n',7);doc.text('Page '+pg+' of '+total,W-MR,10.5,{align:'right'});}
-  function footer(){doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);rgb(txtM);setF('n',6.5);doc.text('DENALI  |  Loose Organics Program  |  Confidential  |  Prepared by VIRESCO AD LLC',W/2,H-9,{align:'center'});doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});}
+  function footer(){doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);rgb(txtM);setF('n',6.5);doc.text('DENALI  |  Loose Organics Program  |  Confidential  |  Prepared by VIRESCO',W/2,H-9,{align:'center'});doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});}
   function secBar(y,title,sub){fill(dnDark);doc.rect(ML,y,PW,9,'F');fill(dnLight);doc.rect(ML,y,3,9,'F');rgb(white);setF('b',9.5);doc.text(title.toUpperCase(),ML+7,y+6.2);if(sub){setF('n',6.5);doc.text(sub,W-MR-2,y+6.2,{align:'right'});}return y+13;}
   function kpiBox(x,y,w,label,value,sub,accent){fill(bg);doc.roundedRect(x,y,w,22,1.5,1.5,'F');var ac=accent||dnLight;fill(ac);doc.rect(x,y,w,2,'F');rgb(ac);setF('b',6);doc.text(label.toUpperCase(),x+4,y+9);rgb(dnDeep);setF('b',13);doc.text(String(value),x+4,y+16.5);rgb(txtM);setF('n',6);doc.text(String(sub),x+4,y+20.5);}
   function tblRow(y,cols,widths,isHdr,isBg){var x=ML;var h=isHdr?8:7;if(isHdr){fill(dnDark);doc.rect(ML,y,PW,h,'F');rgb(white);setF('b',6.5);}else{if(isBg){fill([248,249,251]);doc.rect(ML,y,PW,h,'F');}rgb(dnDeep);setF('n',7);}for(var i=0;i<cols.length;i++){var a=i===0?'left':'right';doc.text(String(cols[i]),a==='left'?x+3:x+widths[i]-3,y+(isHdr?5.5:5),{align:a});x+=widths[i];}return y+h;}
@@ -2185,7 +2185,7 @@ function generateLoosePDF(){
   fill([38,56,72]);doc.roundedRect(W/2-50,H-55,100,30,2,2,'F');
   rgb([180,200,210]);setF('n',8);
   doc.text('Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-44,{align:'center'});
-  doc.text('Prepared by VIRESCO AD LLC',W/2,H-37,{align:'center'});
+  doc.text('Prepared by VIRESCO',W/2,H-37,{align:'center'});
   rgb(txtM);setF('i',7);doc.text('Confidential - For Authorized Recipients Only',W/2,H-30,{align:'center'});
 
   // PAGE 2 - EXECUTIVE SUMMARY
@@ -2370,7 +2370,7 @@ function generateSummaryPDF(){
   function rgb(c){doc.setTextColor(c[0],c[1],c[2]);}
   function fill(c){doc.setFillColor(c[0],c[1],c[2]);}
   function header(pg,total){fill(dnDeep);doc.rect(0,0,W,16,'F');rgb(dnLight);setF('b',12);doc.text('DENALI',ML,10.5);rgb(white);setF('n',7);doc.text('All Programs Summary',ML+28,10.5);rgb(txtM);setF('n',7);doc.text('Page '+pg+' of '+total,W-MR,10.5,{align:'right'});}
-  function footer(){doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);rgb(txtM);setF('n',6.5);doc.text('DENALI  |  All Programs Summary  |  Confidential  |  Prepared by VIRESCO AD LLC',W/2,H-9,{align:'center'});doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});}
+  function footer(){doc.setDrawColor(220,220,220);doc.line(ML,H-14,W-MR,H-14);rgb(txtM);setF('n',6.5);doc.text('DENALI  |  All Programs Summary  |  Confidential  |  Prepared by VIRESCO',W/2,H-9,{align:'center'});doc.text(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-5,{align:'center'});}
   function secBar(y,title,sub){fill(dnDark);doc.rect(ML,y,PW,9,'F');fill(dnLight);doc.rect(ML,y,3,9,'F');rgb(white);setF('b',9.5);doc.text(title.toUpperCase(),ML+7,y+6.2);if(sub){setF('n',6.5);doc.text(sub,W-MR-2,y+6.2,{align:'right'});}return y+13;}
   function kpiBox(x,y,w,label,value,sub,accent){fill(bg);doc.roundedRect(x,y,w,22,1.5,1.5,'F');var ac=accent||dnLight;fill(ac);doc.rect(x,y,w,2,'F');rgb(ac);setF('b',6);doc.text(label.toUpperCase(),x+4,y+9);rgb(dnDeep);setF('b',13);doc.text(String(value),x+4,y+16.5);rgb(txtM);setF('n',6);doc.text(String(sub),x+4,y+20.5);}
   function tblRow(y,cols,widths,isHdr,isBg){var x=ML;var h=isHdr?8:7;if(isHdr){fill(dnDark);doc.rect(ML,y,PW,h,'F');rgb(white);setF('b',6.5);}else{if(isBg){fill([248,249,251]);doc.rect(ML,y,PW,h,'F');}rgb(dnDeep);setF('n',7);}for(var i=0;i<cols.length;i++){var a=i===0?'left':'right';doc.text(String(cols[i]),a==='left'?x+3:x+widths[i]-3,y+(isHdr?5.5:5),{align:a});x+=widths[i];}return y+h;}
@@ -2394,7 +2394,7 @@ function generateSummaryPDF(){
   fill([38,56,72]);doc.roundedRect(W/2-50,H-55,100,30,2,2,'F');
   rgb([180,200,210]);setF('n',8);
   doc.text('Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),W/2,H-44,{align:'center'});
-  doc.text('Prepared by VIRESCO AD LLC',W/2,H-37,{align:'center'});
+  doc.text('Prepared by VIRESCO',W/2,H-37,{align:'center'});
   rgb(txtM);setF('i',7);doc.text('Confidential - For Authorized Recipients Only',W/2,H-30,{align:'center'});
 
   // PAGE 2 - COMBINED OVERVIEW
